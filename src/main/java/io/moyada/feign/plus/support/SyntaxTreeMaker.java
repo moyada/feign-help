@@ -1,5 +1,6 @@
 package io.moyada.feign.plus.support;
 
+import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.model.JavacElements;
@@ -122,6 +123,10 @@ public class SyntaxTreeMaker {
 
     public Symbol.ClassSymbol getTypeElement(String className) {
         return javacElements.getTypeElement(className);
+    }
+
+    public List<JCTree.JCAnnotation> Annotations(List<Attribute.Compound> var1) {
+        return treeMaker.Annotations(var1);
     }
 
     /**

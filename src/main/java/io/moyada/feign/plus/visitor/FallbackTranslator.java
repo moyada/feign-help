@@ -1,16 +1,19 @@
 package io.moyada.feign.plus.visitor;
 
+import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
+import io.moyada.feign.plus.annotation.Fallback;
 import io.moyada.feign.plus.support.SyntaxTreeMaker;
 import io.moyada.feign.plus.util.ElementUtil;
 import io.moyada.feign.plus.util.TreeUtil;
 
 import javax.annotation.processing.Messager;
+import javax.tools.Diagnostic;
 import java.util.Iterator;
 
 /**
@@ -31,8 +34,22 @@ public class FallbackTranslator extends BaseTranslator {
     @Override
     public void visitClassDef(JCTree.JCClassDecl jcClassDecl) {
         super.visitClassDef(jcClassDecl);
+        // 过滤非接口
+        if ((jcClassDecl.getModifiers().flags & Flags.INTERFACE) == 0) {
+            return;
+        }
+        // 过滤内部类
+        String localClass = jcClassDecl.sym.outermostClass().toString();
+        String name = jcClassDecl.sym.toString();
+        if (!localClass.equals(name)) {
+            return;
+        }
+        messager.printMessage(Diagnostic.Kind.NOTE, jcClassDecl.name.toString());
+
         JCTree.JCClassDecl classDecl = createClass(jcClassDecl);
         appendClass(jcClassDecl, classDecl);
+
+        System.out.println(jcClassDecl.toString());
     }
 
     /**
@@ -75,7 +92,28 @@ public class FallbackTranslator extends BaseTranslator {
         JCTree.JCIdent ident = treeMaker.Ident(interClass.name);
         List<JCTree.JCExpression> inters = List.of((JCTree.JCExpression) ident);
 
-        return treeMaker.ClassDef(treeMaker.Modifiers(Flags.PUBLIC),
+        JCTree.JCModifiers mod;
+        String value = TreeUtil.getAnnotationValue(interClass.sym, Fallback.class.getName(), "bean()");
+        if (value != null && value.equals("false")) {
+            mod = treeMaker.Modifiers(Flags.PUBLIC);
+        } else {
+            // import
+            JCTree.JCIdent fullbean = treeMaker.Ident(syntaxTreeMaker.getName("org.springframework.stereotype.Component"));
+            JCTree.JCFieldAccess select = treeMaker.Select(fullbean, name);
+
+            TreePath treePath = trees.getPath(interClass.sym);
+            JCTree.JCCompilationUnit jccu = (JCTree.JCCompilationUnit) treePath.getCompilationUnit();
+            if (!jccu.defs.contains(select)) {
+                jccu.defs = jccu.defs.append(select);
+            }
+
+            // @annotaion
+            JCTree.JCIdent bean = treeMaker.Ident(syntaxTreeMaker.getName("Component"));
+            JCTree.JCAnnotation annotation = treeMaker.Annotation(bean, List.<JCTree.JCExpression>nil());
+            mod = treeMaker.Modifiers(Flags.PUBLIC, List.of(annotation));
+        }
+
+        return treeMaker.ClassDef(mod,
                 name,
                 List.<JCTree.JCTypeParameter>nil(),
                 null,
@@ -89,22 +127,21 @@ public class FallbackTranslator extends BaseTranslator {
      * @return 方法元素
      */
     private JCTree.JCMethodDecl createJCMethod(JCTree.JCMethodDecl jcMethodDecl) {
-        JCTree.JCMethodDecl methodDecl = treeMaker.MethodDef(treeMaker.Modifiers(Flags.PUBLIC),
+        JCTree.JCModifiers mod;
+        if (jcMethodDecl.sym == null || jcMethodDecl.sym.getAnnotationMirrors().isEmpty()) {
+            mod = treeMaker.Modifiers(Flags.PUBLIC);
+        } else {
+            List<JCTree.JCAnnotation> annotations = treeMaker.Annotations(jcMethodDecl.sym.getAnnotationMirrors());
+            mod = treeMaker.Modifiers(Flags.PUBLIC, annotations);
+        }
+
+        return treeMaker.MethodDef(mod,
                 jcMethodDecl.name,
                 jcMethodDecl.restype,
                 jcMethodDecl.typarams,
                 jcMethodDecl.params,
                 jcMethodDecl.thrown,
                 emptyBody(), null);
-
-//        if (jcMethodDecl.sym == null || jcMethodDecl.sym.getAnnotationMirrors() == null) {
-//            methodDecl.sym = jcMethodDecl.sym;
-//            return methodDecl;
-//        }
-//        methodDecl.sym = jcMethodDecl.sym.clone(jcMethodDecl.sym);
-//        methodDecl.sym.getAnnotationMirrors().appendList(jcMethodDecl.sym.getAnnotationMirrors());
-        // methodDecl.sym.getAnnotationMirrors();
-        return methodDecl;
     }
 
     private JCTree.JCBlock emptyBody() {

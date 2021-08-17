@@ -11,4 +11,6 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.SOURCE)
 public @interface Fallback {
+
+    boolean bean() default true;
 }
