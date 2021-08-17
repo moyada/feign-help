@@ -18,6 +18,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -48,12 +49,28 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
 
         ClassUtil.disableJava9SillyWarning();
 
+        if (!(processingEnv instanceof JavacProcessingEnvironment)) {
+            processingEnv = jbUnwrap(ProcessingEnvironment.class, processingEnv);
+            System.out.println(processingEnv.getClass());
+        }
+
         this.context = ((JavacProcessingEnvironment) processingEnv).getContext();
         this.filer = processingEnv.getFiler();
         this.trees = Trees.instance(processingEnv);
         this.messager = processingEnv.getMessager();
 
         messager.printMessage(Diagnostic.Kind.NOTE, "run feign plus processor");
+    }
+
+    private static <T> T jbUnwrap(Class<? extends T> iface, T wrapper) {
+        T unwrapped = null;
+        try {
+            final Class<?> apiWrappers = wrapper.getClass().getClassLoader().loadClass("org.jetbrains.jps.javac.APIWrappers");
+            final Method unwrapMethod = apiWrappers.getDeclaredMethod("unwrap", Class.class, Object.class);
+            unwrapped = iface.cast(unwrapMethod.invoke(null, iface, wrapper));
+        }
+        catch (Throwable ignored) {}
+        return unwrapped != null? unwrapped : wrapper;
     }
 
     @Override
