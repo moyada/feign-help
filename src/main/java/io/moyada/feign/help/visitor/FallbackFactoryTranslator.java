@@ -7,6 +7,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
+import io.moyada.feign.help.annotation.FallbackFactoryBuild;
 import io.moyada.feign.help.constant.ClassName;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
 import io.moyada.feign.help.util.TreeUtil;
@@ -78,10 +79,16 @@ public class FallbackFactoryTranslator extends BaseTranslator {
         List<JCTree.JCExpression> inters = List.of((JCTree.JCExpression) select);
 
         // @annotaion
-        Name name = importClass(interClass, "org.springframework.stereotype", "Component");
-        JCTree.JCIdent bean = treeMaker.Ident(name);
-        JCTree.JCAnnotation annotation = treeMaker.Annotation(bean, List.<JCTree.JCExpression>nil());
-        JCTree.JCModifiers mod = treeMaker.Modifiers(Flags.PUBLIC, List.of(annotation));
+        String value = TreeUtil.getAnnotationValue(interClass.sym, FallbackFactoryBuild.class.getName(), "bean()");
+        JCTree.JCModifiers mod;
+        if (value == null || value.equals("true")) {
+            Name name = importClass(interClass, "org.springframework.stereotype", "Component");
+            JCTree.JCIdent bean = treeMaker.Ident(name);
+            JCTree.JCAnnotation annotation = treeMaker.Annotation(bean, List.<JCTree.JCExpression>nil());
+            mod = treeMaker.Modifiers(Flags.PUBLIC, List.of(annotation));
+        } else {
+            mod = treeMaker.Modifiers(Flags.PUBLIC);
+        }
 
         return treeMaker.ClassDef(mod,
                 this.name,
