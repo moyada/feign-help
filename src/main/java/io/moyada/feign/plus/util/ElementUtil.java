@@ -4,8 +4,8 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
-import io.moyada.feign.plus.annotation.Fallback;
-import io.moyada.feign.plus.annotation.FallbackFactory;
+import io.moyada.feign.plus.annotation.FallbackBuild;
+import io.moyada.feign.plus.annotation.FallbackFactoryBuild;
 import io.moyada.feign.plus.annotation.NotBlank;
 import io.moyada.feign.plus.support.ElementOptions;
 import io.moyada.feign.plus.support.SyntaxTreeMaker;
@@ -29,7 +29,7 @@ public final class ElementUtil {
     }
 
     public static List<JCTree.JCClassDecl> getFallbackFactory(Trees trees, RoundEnvironment roundEnv) {
-        Set<? extends Element> factoryEles = roundEnv.getElementsAnnotatedWith(FallbackFactory.class);
+        Set<? extends Element> factoryEles = roundEnv.getElementsAnnotatedWith(FallbackFactoryBuild.class);
         if (factoryEles.isEmpty()) {
             return Collections.emptyList();
         }
@@ -44,7 +44,7 @@ public final class ElementUtil {
     }
 
     public static List<JCTree.JCClassDecl> getFallback(Trees trees, RoundEnvironment roundEnv, List<JCTree.JCClassDecl> factoryEles) {
-        Set<? extends Element> fallbackEles = roundEnv.getElementsAnnotatedWith(Fallback.class);
+        Set<? extends Element> fallbackEles = roundEnv.getElementsAnnotatedWith(FallbackBuild.class);
         if (fallbackEles.isEmpty()) {
             return factoryEles;
         }
@@ -54,6 +54,9 @@ public final class ElementUtil {
         for (Element element : fallbackEles) {
             if (element.getKind() == ElementKind.INTERFACE) {
                 JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) trees.getTree(element);
+                System.out.println(classDecl.toString());
+                System.out.println(classDecl.typarams);
+
                 list.add(classDecl);
             }
         }

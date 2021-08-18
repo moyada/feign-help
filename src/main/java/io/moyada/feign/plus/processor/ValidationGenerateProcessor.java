@@ -10,6 +10,7 @@ import io.moyada.feign.plus.support.ElementOptions;
 import io.moyada.feign.plus.support.SyntaxTreeMaker;
 import io.moyada.feign.plus.util.ClassUtil;
 import io.moyada.feign.plus.util.ElementUtil;
+import io.moyada.feign.plus.visitor.FallbackFactoryTranslator;
 import io.moyada.feign.plus.visitor.FallbackTranslator;
 import io.moyada.feign.plus.visitor.UtilMethodTranslator;
 
@@ -88,10 +89,10 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
             fallbackEle.accept(translator);
         }
 
-//        translator = new FallbackFactoryTranslator(syntaxTreeMaker, messager, trees);
-//        for (JCTree.JCClassDecl factoryEle: factoryEles) {
-//            factoryEle.accept(translator);
-//        }
+        translator = new FallbackFactoryTranslator(syntaxTreeMaker, messager, trees);
+        for (JCTree.JCClassDecl factoryEle: factoryEles) {
+            factoryEle.accept(translator);
+        }
         return true;
     }
 

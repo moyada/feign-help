@@ -1,5 +1,7 @@
 package io.moyada.feign.plus.visitor;
 
+import com.sun.source.util.TreePath;
+import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree;
@@ -7,11 +9,12 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Name;
+import io.moyada.feign.plus.support.SyntaxTreeMaker;
 import io.moyada.feign.plus.support.TypeTag;
 import io.moyada.feign.plus.util.CheckUtil;
 import io.moyada.feign.plus.util.TreeUtil;
 import io.moyada.feign.plus.util.TypeUtil;
-import io.moyada.feign.plus.support.SyntaxTreeMaker;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
@@ -22,6 +25,8 @@ import javax.lang.model.element.ElementKind;
  * @since 1.0
  **/
 abstract class BaseTranslator extends TreeTranslator {
+
+    protected Trees trees;
 
     // 信息输出提供器
     final Messager messager;
@@ -38,6 +43,29 @@ abstract class BaseTranslator extends TreeTranslator {
 
         this.treeMaker = syntaxTreeMaker.getTreeMaker();
     }
+
+
+    /**
+     * 创建类
+     * @param classDecl 接口
+     * @return 方法元素
+     */
+    protected Name importClass(JCTree.JCClassDecl classDecl, String pkg, String claaName) {
+        Name fullname = syntaxTreeMaker.getName(pkg);
+        Name simplename = syntaxTreeMaker.getName(claaName);
+
+        JCTree.JCIdent fullbean = treeMaker.Ident(fullname);
+        JCTree.JCFieldAccess select = treeMaker.Select(fullbean, simplename);
+        JCTree.JCImport anImport = treeMaker.Import(select, false);
+
+        TreePath treePath = trees.getPath(classDecl.sym);
+        JCTree.JCCompilationUnit jccu = (JCTree.JCCompilationUnit) treePath.getCompilationUnit();
+        if (!jccu.defs.contains(select)) {
+            jccu.defs = jccu.defs.append(anImport);
+        }
+        return simplename;
+    }
+
 
     /**
      * 检测异常类是否包含 String 构造函数

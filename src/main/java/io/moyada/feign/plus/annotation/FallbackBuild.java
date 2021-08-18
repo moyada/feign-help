@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Documented
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.SOURCE)
-public @interface Fallback {
+public @interface FallbackBuild {
 
     boolean bean() default true;
 }

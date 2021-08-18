@@ -1,13 +1,12 @@
 package io.moyada.feign.plus.visitor;
 
-import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
-import io.moyada.feign.plus.annotation.Fallback;
+import io.moyada.feign.plus.annotation.FallbackBuild;
 import io.moyada.feign.plus.support.SyntaxTreeMaker;
 import io.moyada.feign.plus.util.ElementUtil;
 import io.moyada.feign.plus.util.TreeUtil;
@@ -22,12 +21,11 @@ import java.util.Iterator;
  **/
 public class FallbackTranslator extends BaseTranslator {
 
-    private Trees trees;
     private Name name;
 
     public FallbackTranslator(SyntaxTreeMaker syntaxTreeMaker, Messager messager, Trees trees) {
         super(syntaxTreeMaker, messager);
-        this.trees = trees;
+        super.trees = trees;
         name = syntaxTreeMaker.getName("Fallback");
     }
 
@@ -48,8 +46,6 @@ public class FallbackTranslator extends BaseTranslator {
 
         JCTree.JCClassDecl classDecl = createClass(jcClassDecl);
         appendClass(jcClassDecl, classDecl);
-
-        System.out.println(jcClassDecl.toString());
     }
 
     /**
@@ -93,22 +89,13 @@ public class FallbackTranslator extends BaseTranslator {
         List<JCTree.JCExpression> inters = List.of((JCTree.JCExpression) ident);
 
         JCTree.JCModifiers mod;
-        String value = TreeUtil.getAnnotationValue(interClass.sym, Fallback.class.getName(), "bean()");
-        if (value != null && value.equals("false")) {
+        String value = TreeUtil.getAnnotationValue(interClass.sym, FallbackBuild.class.getName(), "bean()");
+        if (value == null || value.equals("false")) {
             mod = treeMaker.Modifiers(Flags.PUBLIC);
         } else {
             // import
-            JCTree.JCIdent fullbean = treeMaker.Ident(syntaxTreeMaker.getName("org.springframework.stereotype.Component"));
-            JCTree.JCFieldAccess select = treeMaker.Select(fullbean, name);
-
-            TreePath treePath = trees.getPath(interClass.sym);
-            JCTree.JCCompilationUnit jccu = (JCTree.JCCompilationUnit) treePath.getCompilationUnit();
-            if (!jccu.defs.contains(select)) {
-                jccu.defs = jccu.defs.append(select);
-            }
-
-            // @annotaion
-            JCTree.JCIdent bean = treeMaker.Ident(syntaxTreeMaker.getName("Component"));
+            Name name = importClass(interClass, "org.springframework.stereotype", "Component");
+            JCTree.JCIdent bean = treeMaker.Ident(name);
             JCTree.JCAnnotation annotation = treeMaker.Annotation(bean, List.<JCTree.JCExpression>nil());
             mod = treeMaker.Modifiers(Flags.PUBLIC, List.of(annotation));
         }
