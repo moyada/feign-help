@@ -93,24 +93,6 @@ public class FallbackTranslator extends BaseTranslator {
             }
         }
         return list;
-
-//        List<JCTree> list = null;
-//        if (methodList.isEmpty()) {
-//            list = List.<JCTree>nil();
-//        } else {
-//            Iterator<JCTree.JCMethodDecl> it = methodList.iterator();
-//            while (it.hasNext()) {
-//                JCTree.JCMethodDecl methodDecl = it.next();
-//                JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl);
-//
-//                if (list == null) {
-//                    list = List.of((JCTree) jcMethod);
-//                } else {
-//                    list = list.append((JCTree) jcMethod);
-//                }
-//            }
-//        }
-//        return list;
     }
 
     /**
@@ -119,13 +101,14 @@ public class FallbackTranslator extends BaseTranslator {
      * @return 方法元素
      */
     private JCTree.JCMethodDecl createJCMethod(JCTree.JCMethodDecl jcMethodDecl) {
-        JCTree.JCModifiers mod;
-        if (jcMethodDecl.sym == null || jcMethodDecl.sym.getAnnotationMirrors().isEmpty()) {
-            mod = treeMaker.Modifiers(Flags.PUBLIC);
-        } else {
-            List<JCTree.JCAnnotation> annotations = treeMaker.Annotations(jcMethodDecl.sym.getAnnotationMirrors());
-            mod = treeMaker.Modifiers(Flags.PUBLIC, annotations);
-        }
+        JCTree.JCModifiers mod = treeMaker.Modifiers(Flags.PUBLIC);
+
+//        if (jcMethodDecl.sym == null || jcMethodDecl.sym.getAnnotationMirrors().isEmpty()) {
+//            mod = treeMaker.Modifiers(Flags.PUBLIC);
+//        } else {
+//            List<JCTree.JCAnnotation> annotations = treeMaker.Annotations(jcMethodDecl.sym.getAnnotationMirrors());
+//            mod = treeMaker.Modifiers(Flags.PUBLIC, annotations);
+//        }
 
         return treeMaker.MethodDef(mod,
                 jcMethodDecl.name,
