@@ -13,7 +13,6 @@ import io.moyada.feign.help.util.ElementUtil;
 import io.moyada.feign.help.util.TreeUtil;
 
 import javax.annotation.processing.Messager;
-import java.util.Iterator;
 
 /**
  * @author xueyikang
@@ -79,24 +78,39 @@ public class FallbackTranslator extends BaseTranslator {
 
     private List<JCTree> buildMethod(JCTree.JCClassDecl interClass) {
         java.util.List<JCTree.JCMethodDecl> methodList = ElementUtil.getStaticMethod(trees, syntaxTreeMaker, interClass);
+        if (methodList.isEmpty()) {
+            return List.<JCTree>nil();
+        }
 
         List<JCTree> list = null;
-        if (methodList.isEmpty()) {
-            list = List.<JCTree>nil();
-        } else {
-            Iterator<JCTree.JCMethodDecl> it = methodList.iterator();
-            while (it.hasNext()) {
-                JCTree.JCMethodDecl methodDecl = it.next();
-                JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl);
+        for (JCTree.JCMethodDecl methodDecl : methodList) {
+            JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl);
 
-                if (list == null) {
-                    list = List.of((JCTree) jcMethod);
-                } else {
-                    list = list.append((JCTree) jcMethod);
-                }
+            if (list == null) {
+                list = List.of((JCTree) jcMethod);
+            } else {
+                list = list.append((JCTree) jcMethod);
             }
         }
         return list;
+
+//        List<JCTree> list = null;
+//        if (methodList.isEmpty()) {
+//            list = List.<JCTree>nil();
+//        } else {
+//            Iterator<JCTree.JCMethodDecl> it = methodList.iterator();
+//            while (it.hasNext()) {
+//                JCTree.JCMethodDecl methodDecl = it.next();
+//                JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl);
+//
+//                if (list == null) {
+//                    list = List.of((JCTree) jcMethod);
+//                } else {
+//                    list = list.append((JCTree) jcMethod);
+//                }
+//            }
+//        }
+//        return list;
     }
 
     /**
