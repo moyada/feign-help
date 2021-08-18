@@ -6,10 +6,10 @@
 
     <groupId>io.github.moyada</groupId>
     <artifactId>feign-help</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0-RELEASE</version>
 
-    <name>feign plus</name>
-    <description>feign factory.</description>
+    <name>feign help</name>
+    <description>a simple plugin for automatic create feign fallback factory.</description>
     <url>https://github.com/moyada/feign-help</url>
 
     <licenses>
@@ -40,7 +40,9 @@
         <maven.source.version>3.0.1</maven.source.version>
         <maven.javadoc.version>3.0.1</maven.javadoc.version>
         <maven.gpg.version>1.6</maven.gpg.version>
-        <gpg.skip>true</gpg.skip>
+        <gpg.keyname>0x7E2214AD</gpg.keyname>
+        <!--   发布时关闭   -->
+        <gpg.skip>false</gpg.skip>
     </properties>
 
     <dependencies>
@@ -102,9 +104,6 @@
                 <version>1.6.7</version>
                 <extensions>true</extensions>
                 <configuration>
-<!--                    <serverId>ossrh</serverId>-->
-<!--                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>-->
-<!--                    <autoReleaseAfterClose>true</autoReleaseAfterClose>-->
                     <serverId>ossrh</serverId>
                     <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
@@ -145,6 +144,8 @@
                 <version>${maven.gpg.version}</version>
                 <configuration>
                     <skip>${gpg.skip}</skip>
+                    <keyname>${gpg.keyname}</keyname>
+                    <passphraseServerId>${gpg.keyname}</passphraseServerId>
                 </configuration>
                 <executions>
                     <execution>
@@ -168,13 +169,5 @@
             <id>ossrh</id>
             <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
-<!--        <snapshotRepository>-->
-<!--            <id>ossrh</id>-->
-<!--            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>-->
-<!--        </snapshotRepository>-->
-<!--        <repository>-->
-<!--            <id>ossrh</id>-->
-<!--            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
-<!--        </repository>-->
     </distributionManagement>
 </project>

@@ -56,7 +56,7 @@ public class FeignHelpProcessor extends AbstractProcessor {
         this.trees = Trees.instance(processingEnv);
         this.messager = processingEnv.getMessager();
 
-        messager.printMessage(Diagnostic.Kind.NOTE, "run feign plus processor");
+        messager.printMessage(Diagnostic.Kind.NOTE, "Running Feign Help Processor.");
     }
 
     private static <T> T jbUnwrap(Class<? extends T> iface, T wrapper) {

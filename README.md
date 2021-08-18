@@ -5,9 +5,9 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/feign-help/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.moyada/feign-help)
 ![License MIT](https://img.shields.io/badge/MIT-342e38?style=flat-square&label=License)
 
-## Installation
+## 安装
 
-In your **module** *pom.xml* :
+添加 `feign-help` maven 依赖到项目 **模块**中 *pom.xml* :
 
 ```
 <dependency>
@@ -17,7 +17,7 @@ In your **module** *pom.xml* :
 </dependency>
 ```
 
-## Usage
+## 使用
 
 #### 引用 Feign 接口
 
@@ -35,7 +35,7 @@ public interface UserApi {
 }
 ```
 
-#### 构建 Feign Client
+#### 使用方构建 Feign Client
 
 只需简单使用注解标记，经过编译过的class文件将会自动添加对应的 `FallbackFactory`
 
@@ -47,7 +47,7 @@ public interface UserRemote extends UserApi {
 
 ```
 
-#### 经过编译后 UserRemote.class 文件
+#### 经过编译后的 UserRemote.class 文件
 
 ```
 @FeignClient(
