@@ -2,6 +2,7 @@ package io.moyada.feign.plus.visitor;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
+import sun.tools.java.CompilerError;
 
 /**
  * 坐标扫描器
@@ -15,7 +16,7 @@ public class PosScanner extends TreeScanner {
 
     PosScanner(JCTree.JCClassDecl classNode) {
         if (null == classNode) {
-            throw new NullPointerException("Parameter \"JCClassDecl\" can't be null");
+            throw new CompilerError("Parameter \"JCClassDecl\" can't be null");
         }
         this.classNode = classNode;
     }

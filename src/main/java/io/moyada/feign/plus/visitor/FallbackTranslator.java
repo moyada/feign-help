@@ -7,6 +7,7 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import io.moyada.feign.plus.annotation.FallbackBuild;
+import io.moyada.feign.plus.constant.ClassName;
 import io.moyada.feign.plus.support.SyntaxTreeMaker;
 import io.moyada.feign.plus.util.ElementUtil;
 import io.moyada.feign.plus.util.TreeUtil;
@@ -23,10 +24,9 @@ public class FallbackTranslator extends BaseTranslator {
 
     private Name name;
 
-    public FallbackTranslator(SyntaxTreeMaker syntaxTreeMaker, Messager messager, Trees trees) {
-        super(syntaxTreeMaker, messager);
-        super.trees = trees;
-        name = syntaxTreeMaker.getName("Fallback");
+    public FallbackTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Messager messager) {
+        super(trees, syntaxTreeMaker, messager);
+        name = syntaxTreeMaker.getName(ClassName.BEAN_NAME);
     }
 
     @Override
@@ -42,22 +42,9 @@ public class FallbackTranslator extends BaseTranslator {
         if (!localClass.equals(name)) {
             return;
         }
-        messager.printMessage(Diagnostic.Kind.NOTE, jcClassDecl.name.toString());
 
         JCTree.JCClassDecl classDecl = createClass(jcClassDecl);
-        appendClass(jcClassDecl, classDecl);
-    }
-
-    /**
-     * 创建类
-     * @param interClass 接口
-     * @return 方法元素
-     */
-    private void appendClass(JCTree.JCClassDecl interClass, JCTree.JCClassDecl classDecl) {
-        PosScanner posScanner = new PosScanner(interClass);
-        interClass.accept(posScanner);
-
-        interClass.defs = interClass.defs.append(classDecl);
+        super.appendClass(jcClassDecl, classDecl);
     }
 
     /**
@@ -66,24 +53,7 @@ public class FallbackTranslator extends BaseTranslator {
      * @return 方法元素
      */
     private JCTree.JCClassDecl createClass(JCTree.JCClassDecl interClass) {
-        java.util.List<JCTree.JCMethodDecl> methodList = ElementUtil.getStaticMethod(trees, syntaxTreeMaker, interClass);
-
-        List<JCTree> list = null;
-        if (methodList.isEmpty()) {
-            list = List.<JCTree>nil();
-        } else {
-            Iterator<JCTree.JCMethodDecl> it = methodList.iterator();
-            while (it.hasNext()) {
-                JCTree.JCMethodDecl methodDecl = it.next();
-                JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl);
-
-                if (list == null) {
-                    list = List.of((JCTree) jcMethod);
-                } else {
-                    list = list.append((JCTree) jcMethod);
-                }
-            }
-        }
+        List<JCTree> list = buildMethod(interClass);
 
         JCTree.JCIdent ident = treeMaker.Ident(interClass.name);
         List<JCTree.JCExpression> inters = List.of((JCTree.JCExpression) ident);
@@ -106,6 +76,28 @@ public class FallbackTranslator extends BaseTranslator {
                 null,
                 inters,
                 list);
+    }
+
+    private List<JCTree> buildMethod(JCTree.JCClassDecl interClass) {
+        java.util.List<JCTree.JCMethodDecl> methodList = ElementUtil.getStaticMethod(trees, syntaxTreeMaker, interClass);
+
+        List<JCTree> list = null;
+        if (methodList.isEmpty()) {
+            list = List.<JCTree>nil();
+        } else {
+            Iterator<JCTree.JCMethodDecl> it = methodList.iterator();
+            while (it.hasNext()) {
+                JCTree.JCMethodDecl methodDecl = it.next();
+                JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl);
+
+                if (list == null) {
+                    list = List.of((JCTree) jcMethod);
+                } else {
+                    list = list.append((JCTree) jcMethod);
+                }
+            }
+        }
+        return list;
     }
 
     /**
@@ -135,6 +127,6 @@ public class FallbackTranslator extends BaseTranslator {
         ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
         JCTree.JCReturn returnStatement = treeMaker.Return(syntaxTreeMaker.nullNode);
         statements.add(returnStatement);
-        return getBlock(statements);
+        return syntaxTreeMaker.getBlock(statements);
     }
 }

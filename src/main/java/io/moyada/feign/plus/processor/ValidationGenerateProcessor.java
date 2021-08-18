@@ -6,21 +6,17 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
-import io.moyada.feign.plus.support.ElementOptions;
 import io.moyada.feign.plus.support.SyntaxTreeMaker;
 import io.moyada.feign.plus.util.ClassUtil;
 import io.moyada.feign.plus.util.ElementUtil;
 import io.moyada.feign.plus.visitor.FallbackFactoryTranslator;
 import io.moyada.feign.plus.visitor.FallbackTranslator;
-import io.moyada.feign.plus.visitor.UtilMethodTranslator;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -84,41 +80,16 @@ public class ValidationGenerateProcessor extends AbstractProcessor {
 
         SyntaxTreeMaker syntaxTreeMaker = SyntaxTreeMaker.newInstance(context);
 
-        TreeTranslator translator = new FallbackTranslator(syntaxTreeMaker, messager, trees);
+        TreeTranslator translator = new FallbackTranslator(trees, syntaxTreeMaker, messager);
         for (JCTree.JCClassDecl fallbackEle : fallbackEles) {
             fallbackEle.accept(translator);
         }
 
-        translator = new FallbackFactoryTranslator(syntaxTreeMaker, messager, trees);
+        translator = new FallbackFactoryTranslator(trees, syntaxTreeMaker, messager);
         for (JCTree.JCClassDecl factoryEle: factoryEles) {
             factoryEle.accept(translator);
         }
         return true;
-    }
-
-    /**
-     * 创建工具方法，如指定方法则不生效
-     * 根据配置选择创建新文件提供方法，或者选择一个 public class 创建工具方法
-     * @param roundEnv 根环境
-     * @param elements 元素集合
-     * @param syntaxTreeMaker 语句构造器
-     */
-    private void createUtilMethod(RoundEnvironment roundEnv, Collection<? extends Element> elements, SyntaxTreeMaker syntaxTreeMaker) {
-        boolean createFile = !Boolean.FALSE.toString().equalsIgnoreCase(ElementOptions.UTIL_CREATE);
-        if (createFile) {
-            ElementUtil.createUtil(filer, roundEnv);
-            messager.printMessage(Diagnostic.Kind.NOTE, "Created util class " + ElementOptions.UTIL_CLASS);
-            return;
-        }
-
-        Element classElement = ElementUtil.findFirstPublicClass(elements);
-        if (classElement == null) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "cannot find any public class");
-            return;
-        }
-
-        JCTree tree = (JCTree) trees.getTree(classElement);
-        tree.accept(new UtilMethodTranslator(syntaxTreeMaker, messager, classElement.toString()));
     }
 
     @Override

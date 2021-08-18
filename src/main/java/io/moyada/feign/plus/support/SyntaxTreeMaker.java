@@ -8,6 +8,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import io.moyada.feign.plus.util.*;
 import io.moyada.feign.plus.util.Compiler;
@@ -396,5 +397,14 @@ public class SyntaxTreeMaker {
 
         Method method = ClassUtil.getMethod(TreeMaker.class, "Throw", param);
         return ClassUtil.invoke(method, treeMaker, exceptionType);
+    }
+
+    /**
+     * 获取表达式的代码块
+     * @param statements 表达式语句链
+     * @return 代码块
+     */
+    public JCTree.JCBlock getBlock(ListBuffer<JCTree.JCStatement> statements) {
+        return treeMaker.Block(0, statements.toList());
     }
 }

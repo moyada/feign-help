@@ -7,12 +7,12 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
+import io.moyada.feign.plus.constant.ClassName;
 import io.moyada.feign.plus.support.SyntaxTreeMaker;
 import io.moyada.feign.plus.util.TreeUtil;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
-import javax.tools.Diagnostic;
 
 /**
  * @author xueyikang
@@ -20,18 +20,14 @@ import javax.tools.Diagnostic;
  **/
 public class FallbackFactoryTranslator extends BaseTranslator {
 
-    private Name name;
-    private Symbol.ClassSymbol factorClass;
+    private final Name name;
     private Symbol.MethodSymbol factorMethod;
 
-    public FallbackFactoryTranslator(SyntaxTreeMaker syntaxTreeMaker, Messager messager, Trees trees) {
-        super(syntaxTreeMaker, messager);
-        this.trees = trees;
+    public FallbackFactoryTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Messager messager) {
+        super(trees, syntaxTreeMaker, messager);
+        this.name = syntaxTreeMaker.getName(ClassName.FACTORY_NAME);
 
-        this.name = syntaxTreeMaker.getName("Factory");
-
-        this.factorClass = syntaxTreeMaker.getTypeElement("feign.hystrix.FallbackFactory");
-
+        Symbol.ClassSymbol factorClass = syntaxTreeMaker.getTypeElement("feign.hystrix.FallbackFactory");
         for (Symbol symbol : factorClass.getEnclosedElements()) {
             if (symbol.getKind() == ElementKind.METHOD){
                 factorMethod = (Symbol.MethodSymbol) symbol;
@@ -63,22 +59,9 @@ public class FallbackFactoryTranslator extends BaseTranslator {
         if (!localClass.equals(name)) {
             return;
         }
-        messager.printMessage(Diagnostic.Kind.NOTE, jcClassDecl.name.toString());
 
         JCTree.JCClassDecl classDecl = createClass(jcClassDecl);
-        appendClass(jcClassDecl, classDecl);
-    }
-
-    /**
-     * 创建类
-     * @param interClass 接口
-     * @return 方法元素
-     */
-    private void appendClass(JCTree.JCClassDecl interClass, JCTree.JCClassDecl classDecl) {
-        PosScanner posScanner = new PosScanner(interClass);
-        interClass.accept(posScanner);
-
-        interClass.defs = interClass.defs.append(classDecl);
+        super.appendClass(jcClassDecl, classDecl);
     }
 
     /**
@@ -89,10 +72,10 @@ public class FallbackFactoryTranslator extends BaseTranslator {
     private JCTree.JCClassDecl createClass(JCTree.JCClassDecl interClass) {
         JCTree.JCMethodDecl methodDecl = newMethod(interClass);
 
-        Name impName = importClass(interClass, "feign.hystrix", "FallbackFactory");
-        JCTree.JCIdent ident = treeMaker.Ident(impName);
-
-        List<JCTree.JCExpression> inters = List.of((JCTree.JCExpression) ident);
+        Name pkg = syntaxTreeMaker.getName("feign.hystrix");
+        Name infer = syntaxTreeMaker.getName("FallbackFactory");
+        JCTree.JCFieldAccess select = treeMaker.Select(treeMaker.Ident(pkg), infer);
+        List<JCTree.JCExpression> inters = List.of((JCTree.JCExpression) select);
 
         // @annotaion
         Name name = importClass(interClass, "org.springframework.stereotype", "Component");
@@ -108,16 +91,18 @@ public class FallbackFactoryTranslator extends BaseTranslator {
                 List.of((JCTree) methodDecl));
     }
 
-
     /**
-     * 实现空方法
-     * @param interClass 方法
+     * 实现create方法
+     * @param interClass 接口名
      * @return 方法元素
      */
     private JCTree.JCMethodDecl newMethod(JCTree.JCClassDecl interClass) {
-        Name impName = importClass(interClass, "java.lang", "Override");
-        JCTree.JCIdent ov = treeMaker.Ident(impName);
-        JCTree.JCAnnotation annotation = treeMaker.Annotation(ov, List.<JCTree.JCExpression>nil());
+        Name pkg = syntaxTreeMaker.getName("java.lang");
+        Name name = syntaxTreeMaker.getName("Override");
+        JCTree.JCIdent ident = treeMaker.Ident(pkg);
+        JCTree.JCFieldAccess select = treeMaker.Select(ident, name);
+        JCTree.JCAnnotation annotation = treeMaker.Annotation(select, List.<JCTree.JCExpression>nil());
+
         JCTree.JCModifiers mod = treeMaker.Modifiers(Flags.PUBLIC, List.of(annotation));
 
         JCTree.JCIdent restype = treeMaker.Ident(interClass.sym.name);
@@ -138,10 +123,10 @@ public class FallbackFactoryTranslator extends BaseTranslator {
 
     private JCTree.JCBlock newFactory(JCTree.JCClassDecl interClass) {
         ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
-        String name = interClass.name.toString() + ".Fallback";
+        String name = interClass.name.toString() + "." + ClassName.BEAN_NAME;
         JCTree.JCExpression newExp = syntaxTreeMaker.NewClass(name, List.<JCTree.JCExpression>nil());
         JCTree.JCReturn state = treeMaker.Return(newExp);
         statements.add(state);
-        return getBlock(statements);
+        return syntaxTreeMaker.getBlock(statements);
     }
 }

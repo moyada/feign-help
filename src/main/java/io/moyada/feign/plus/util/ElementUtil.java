@@ -54,9 +54,6 @@ public final class ElementUtil {
         for (Element element : fallbackEles) {
             if (element.getKind() == ElementKind.INTERFACE) {
                 JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) trees.getTree(element);
-                System.out.println(classDecl.toString());
-                System.out.println(classDecl.typarams);
-
                 list.add(classDecl);
             }
         }
