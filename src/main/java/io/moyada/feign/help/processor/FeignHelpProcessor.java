@@ -6,6 +6,7 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
+import io.moyada.feign.help.support.Printer;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
 import io.moyada.feign.help.util.ClassUtil;
 import io.moyada.feign.help.util.ElementUtil;
@@ -35,7 +36,7 @@ public class FeignHelpProcessor extends AbstractProcessor {
     // 语法树
     private Trees trees;
     // 信息输出体
-    private Messager messager;
+    private Printer printer;
 
     public FeignHelpProcessor() {
     }
@@ -48,15 +49,14 @@ public class FeignHelpProcessor extends AbstractProcessor {
 
         if (!(processingEnv instanceof JavacProcessingEnvironment)) {
             processingEnv = jbUnwrap(ProcessingEnvironment.class, processingEnv);
-            System.out.println(processingEnv.getClass());
         }
 
         this.context = ((JavacProcessingEnvironment) processingEnv).getContext();
         this.filer = processingEnv.getFiler();
         this.trees = Trees.instance(processingEnv);
-        this.messager = processingEnv.getMessager();
-
-        messager.printMessage(Diagnostic.Kind.NOTE, "Running Feign Help Processor.");
+        Messager messager = processingEnv.getMessager();
+        this.printer = new Printer(messager);
+        printer.info("Running Feign Help Processor.");
     }
 
     private static <T> T jbUnwrap(Class<? extends T> iface, T wrapper) {
@@ -80,12 +80,12 @@ public class FeignHelpProcessor extends AbstractProcessor {
 
         SyntaxTreeMaker syntaxTreeMaker = SyntaxTreeMaker.newInstance(context);
 
-        TreeTranslator translator = new FallbackTranslator(trees, syntaxTreeMaker, messager);
+        TreeTranslator translator = new FallbackTranslator(trees, syntaxTreeMaker, printer);
         for (JCTree.JCClassDecl fallbackEle : fallbackEles) {
             fallbackEle.accept(translator);
         }
 
-        translator = new FallbackFactoryTranslator(trees, syntaxTreeMaker, messager);
+        translator = new FallbackFactoryTranslator(trees, syntaxTreeMaker, printer);
         for (JCTree.JCClassDecl factoryEle: factoryEles) {
             factoryEle.accept(translator);
         }

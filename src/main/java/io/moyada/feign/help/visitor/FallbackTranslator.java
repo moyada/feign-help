@@ -8,6 +8,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import io.moyada.feign.help.annotation.FallbackBuild;
 import io.moyada.feign.help.constant.ClassName;
+import io.moyada.feign.help.support.Printer;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
 import io.moyada.feign.help.util.ElementUtil;
 import io.moyada.feign.help.util.TreeUtil;
@@ -22,8 +23,8 @@ public class FallbackTranslator extends BaseTranslator {
 
     private Name name;
 
-    public FallbackTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Messager messager) {
-        super(trees, syntaxTreeMaker, messager);
+    public FallbackTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Printer printer) {
+        super(trees, syntaxTreeMaker, printer);
         name = syntaxTreeMaker.getName(ClassName.BEAN_NAME);
     }
 

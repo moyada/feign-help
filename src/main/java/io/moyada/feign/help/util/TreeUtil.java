@@ -47,7 +47,6 @@ public final class TreeUtil {
         if (null == annotationAttr) {
             return null;
         }
-        System.out.println(annotationAttr.toString());
         return getAnnotationValue(annotationAttr, attrKey);
     }
 

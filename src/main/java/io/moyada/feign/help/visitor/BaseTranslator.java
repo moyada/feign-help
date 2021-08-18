@@ -6,9 +6,8 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Name;
+import io.moyada.feign.help.support.Printer;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
-
-import javax.annotation.processing.Messager;
 
 /**
  * 基础监视器
@@ -18,14 +17,14 @@ import javax.annotation.processing.Messager;
 abstract class BaseTranslator extends TreeTranslator {
 
     final Trees trees;
-    final Messager messager;
+    final Printer printer;
     final SyntaxTreeMaker syntaxTreeMaker;
     final TreeMaker treeMaker;
 
-    BaseTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Messager messager) {
+    BaseTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Printer printer) {
         this.trees = trees;
         this.syntaxTreeMaker = syntaxTreeMaker;
-        this.messager = messager;
+        this.printer = printer;
         this.treeMaker = syntaxTreeMaker.getTreeMaker();
     }
 

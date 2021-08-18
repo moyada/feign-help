@@ -9,10 +9,10 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import io.moyada.feign.help.annotation.FallbackFactoryBuild;
 import io.moyada.feign.help.constant.ClassName;
+import io.moyada.feign.help.support.Printer;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
 import io.moyada.feign.help.util.TreeUtil;
 
-import javax.annotation.processing.Messager;
 import javax.lang.model.element.ElementKind;
 
 /**
@@ -24,8 +24,8 @@ public class FallbackFactoryTranslator extends BaseTranslator {
     private final Name name;
     private Symbol.MethodSymbol factorMethod;
 
-    public FallbackFactoryTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Messager messager) {
-        super(trees, syntaxTreeMaker, messager);
+    public FallbackFactoryTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Printer printer) {
+        super(trees, syntaxTreeMaker, printer);
         this.name = syntaxTreeMaker.getName(ClassName.FACTORY_NAME);
 
         Symbol.ClassSymbol factorClass = syntaxTreeMaker.getTypeElement("feign.hystrix.FallbackFactory");

@@ -42,7 +42,7 @@
         <maven.gpg.version>1.6</maven.gpg.version>
         <gpg.keyname>0x7E2214AD</gpg.keyname>
         <!--   发布时关闭   -->
-        <gpg.skip>false</gpg.skip>
+        <gpg.skip>true</gpg.skip>
     </properties>
 
     <dependencies>
