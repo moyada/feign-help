@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.moyada</groupId>
-    <artifactId>feign-plus</artifactId>
+    <artifactId>feign-help</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <name>feign plus</name>
     <description>feign factory.</description>
-    <url>https://github.com/moyada/feign-plus</url>
+    <url>https://github.com/moyada/feign-help</url>
 
     <licenses>
         <license>
@@ -20,9 +20,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git@github.com:moyada/feign-plus.git</connection>
-        <developerConnection>scm:git:git@github.com:moyada/feign-plus.git</developerConnection>
-        <url>git@github.com:moyada/feign-plus.git</url>
+        <connection>scm:git:git@github.com:moyada/feign-help.git</connection>
+        <developerConnection>scm:git:git@github.com:moyada/feign-help.git</developerConnection>
+        <url>git@github.com:moyada/feign-help.git</url>
     </scm>
 
     <developers>

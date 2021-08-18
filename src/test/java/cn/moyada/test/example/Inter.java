@@ -7,10 +7,9 @@ import io.moyada.feign.help.annotation.FallbackBuild;
  * @since 1.0
  **/
 @FallbackBuild
-public class Example {
+public interface Inter {
+    
+    Integer id();
 
-    public boolean save(String name) {
-        System.out.println(name);
-        return true;
-    }
+    String name();
 }

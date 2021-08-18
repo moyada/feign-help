@@ -1,9 +1,5 @@
 package cn.moyada.test.example;
 
-import io.moyada.feign.plus.annotation.Min;
-import io.moyada.feign.plus.annotation.NotBlank;
-import io.moyada.feign.plus.annotation.Size;
-
 import java.util.List;
 
 /**
@@ -12,12 +8,9 @@ import java.util.List;
  **/
 public interface Handler {
     
-    @Min(0)
-    int getId();
+    Integer getId();
 
-    @NotBlank
     String getType();
 
-    @Size(min = 1, max = 20)
-    List<Param> getParams();
+    List<Object> getParams();
 }
