@@ -51,6 +51,25 @@ abstract class BaseTranslator extends TreeTranslator {
 
     /**
      * 创建类
+     * @param classDecl 接口
+     */
+    protected void addImport(JCTree.JCClassDecl classDecl, String pkg, String claaName) {
+        Name fullname = syntaxTreeMaker.getName(pkg);
+        Name simplename = syntaxTreeMaker.getName(claaName);
+
+        JCTree.JCIdent fullbean = treeMaker.Ident(fullname);
+        JCTree.JCFieldAccess select = treeMaker.Select(fullbean, simplename);
+        JCTree.JCImport anImport = treeMaker.Import(select, false);
+
+        TreePath treePath = trees.getPath(classDecl.sym);
+        JCTree.JCCompilationUnit jccu = (JCTree.JCCompilationUnit) treePath.getCompilationUnit();
+        if (!jccu.defs.contains(select)) {
+            jccu.defs = jccu.defs.append(anImport);
+        }
+    }
+
+    /**
+     * 创建类
      * @param interClass 接口
      */
     protected void appendClass(JCTree.JCClassDecl interClass, JCTree.JCClassDecl classDecl) {

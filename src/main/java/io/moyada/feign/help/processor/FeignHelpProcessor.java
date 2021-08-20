@@ -16,9 +16,8 @@ import io.moyada.feign.help.visitor.FallbackTranslator;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 import java.lang.reflect.Method;
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -72,22 +71,20 @@ public class FeignHelpProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        List<JCTree.JCClassDecl> factoryEles = ElementUtil.getFallbackFactory(trees, roundEnv);
-        List<JCTree.JCClassDecl> fallbackEles = ElementUtil.getFallback(trees, roundEnv, factoryEles);
+        Collection<JCTree.JCClassDecl> factoryEles = ElementUtil.getFallbackFactory(trees, roundEnv);
+        Collection<JCTree.JCClassDecl> fallbackEles = ElementUtil.getFallback(trees, roundEnv, factoryEles);
         if (factoryEles.isEmpty() && fallbackEles.isEmpty()) {
             return true;
         }
 
         SyntaxTreeMaker syntaxTreeMaker = SyntaxTreeMaker.newInstance(context);
-
         TreeTranslator translator = new FallbackTranslator(trees, syntaxTreeMaker, printer);
-        for (JCTree.JCClassDecl fallbackEle : fallbackEles) {
-            fallbackEle.accept(translator);
+        for (JCTree.JCClassDecl ele : fallbackEles) {
+            ele.accept(translator);
         }
-
         translator = new FallbackFactoryTranslator(trees, syntaxTreeMaker, printer);
-        for (JCTree.JCClassDecl factoryEle: factoryEles) {
-            factoryEle.accept(translator);
+        for (JCTree.JCClassDecl ele: factoryEles) {
+            ele.accept(translator);
         }
         return true;
     }

@@ -13,7 +13,7 @@ import io.moyada.feign.help.support.SyntaxTreeMaker;
 import io.moyada.feign.help.util.ElementUtil;
 import io.moyada.feign.help.util.TreeUtil;
 
-import javax.annotation.processing.Messager;
+import java.util.Collection;
 
 /**
  * @author xueyikang
@@ -21,7 +21,7 @@ import javax.annotation.processing.Messager;
  **/
 public class FallbackTranslator extends BaseTranslator {
 
-    private Name name;
+    private final Name name;
 
     public FallbackTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Printer printer) {
         super(trees, syntaxTreeMaker, printer);
@@ -41,7 +41,6 @@ public class FallbackTranslator extends BaseTranslator {
         if (!localClass.equals(name)) {
             return;
         }
-
         JCTree.JCClassDecl classDecl = createClass(jcClassDecl);
         super.appendClass(jcClassDecl, classDecl);
     }
@@ -78,15 +77,15 @@ public class FallbackTranslator extends BaseTranslator {
     }
 
     private List<JCTree> buildMethod(JCTree.JCClassDecl interClass) {
-        java.util.List<JCTree.JCMethodDecl> methodList = ElementUtil.getStaticMethod(trees, syntaxTreeMaker, interClass);
+        Collection<JCTree.JCMethodDecl> methodList = ElementUtil.getStaticMethod(trees, syntaxTreeMaker, interClass);
         if (methodList.isEmpty()) {
             return List.<JCTree>nil();
         }
 
         List<JCTree> list = null;
         for (JCTree.JCMethodDecl methodDecl : methodList) {
+            addImport(interClass, methodDecl);
             JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl);
-
             if (list == null) {
                 list = List.of((JCTree) jcMethod);
             } else {
@@ -96,6 +95,38 @@ public class FallbackTranslator extends BaseTranslator {
         return list;
     }
 
+    private void addImport(JCTree.JCClassDecl thisClass, JCTree.JCMethodDecl methodDecl) {
+        JCTree.JCIdent restype;
+        if (methodDecl.restype instanceof JCTree.JCTypeApply) {
+            JCTree.JCTypeApply typeApply = (JCTree.JCTypeApply) methodDecl.restype;
+            restype = (JCTree.JCIdent) typeApply.clazz;
+        } else {
+            restype = (JCTree.JCIdent) methodDecl.restype;
+        }
+        addImport(thisClass, restype.sym.packge().toString(), restype.name.toString());
+
+        for (JCTree.JCVariableDecl param : methodDecl.params) {
+            if (param.vartype instanceof JCTree.JCFieldAccess) {
+                JCTree.JCFieldAccess paramtype = (JCTree.JCFieldAccess) param.vartype;
+                addImport(thisClass, paramtype.sym.packge().toString(), paramtype.name.toString());
+            } else {
+                if (param.vartype instanceof JCTree.JCTypeApply) {
+                    JCTree.JCTypeApply typeApply = (JCTree.JCTypeApply) param.vartype;
+                    JCTree.JCFieldAccess paramtype = (JCTree.JCFieldAccess) typeApply.clazz;
+                    addImport(thisClass, paramtype.sym.packge().toString(), paramtype.name.toString());
+                } else {
+                    JCTree.JCIdent paramtype = (JCTree.JCIdent) param.vartype;
+                    addImport(thisClass, paramtype.sym.packge().toString(), paramtype.name.toString());
+                }
+            }
+        }
+
+        for (JCTree.JCExpression expression : methodDecl.thrown) {
+            JCTree.JCIdent thro = (JCTree.JCIdent) expression;
+            addImport(thisClass, thro.sym.packge().toString(), thro.name.toString());
+        }
+    }
+
     /**
      * 实现空方法
      * @param jcMethodDecl 方法
@@ -103,13 +134,9 @@ public class FallbackTranslator extends BaseTranslator {
      */
     private JCTree.JCMethodDecl createJCMethod(JCTree.JCMethodDecl jcMethodDecl) {
         JCTree.JCModifiers mod = treeMaker.Modifiers(Flags.PUBLIC);
-
-//        if (jcMethodDecl.sym == null || jcMethodDecl.sym.getAnnotationMirrors().isEmpty()) {
-//            mod = treeMaker.Modifiers(Flags.PUBLIC);
-//        } else {
-//            List<JCTree.JCAnnotation> annotations = treeMaker.Annotations(jcMethodDecl.sym.getAnnotationMirrors());
-//            mod = treeMaker.Modifiers(Flags.PUBLIC, annotations);
-//        }
+        for (JCTree.JCVariableDecl param : jcMethodDecl.params) {
+            param.mods.annotations = List.nil();
+        }
 
         return treeMaker.MethodDef(mod,
                 jcMethodDecl.name,
