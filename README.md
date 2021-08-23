@@ -13,7 +13,7 @@
 <dependency>
     <groupId>io.github.moyada</groupId>
     <artifactId>feign-help</artifactId>
-    <version>1.0.0-REPLEASE</version>
+    <version>1.0.2-RELEASE</version>
 </dependency>
 ```
 
@@ -37,7 +37,7 @@ public interface UserApi {
 
 #### 使用方构建 Feign Client
 
-只需简单使用注解标记，经过编译过的class文件将会自动添加对应的 `FallbackFactory`
+只需简单使用注解标记，经过编译过的class文件将会自动添加对应的 `Fallback`, `FallbackFactory`
 
 ```
 @FallbackFactoryBuild
