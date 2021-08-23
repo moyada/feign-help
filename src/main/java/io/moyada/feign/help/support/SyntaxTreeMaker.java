@@ -40,6 +40,8 @@ public class SyntaxTreeMaker {
     // int 0 表达式
     public final JCTree.JCLiteral zeroIntNode;
     public final JCTree.JCLiteral zeroLongNode;
+    public final JCTree.JCLiteral zeroFloatNode;
+    public final JCTree.JCLiteral zeroDoubleNode;
 
     // true 表达式
     public final JCTree.JCLiteral trueNode;
@@ -68,6 +70,8 @@ public class SyntaxTreeMaker {
         this.falseNode = newElement(TypeTag.BOOLEAN, 0);
         this.zeroIntNode = newElement(TypeTag.INT, 0);
         this.zeroLongNode = newElement(TypeTag.LONG, 0);
+        this.zeroFloatNode = newElement(TypeTag.FLOAT, 0);
+        this.zeroDoubleNode = newElement(TypeTag.DOUBLE, 0);
         this.emptyCh = newElement(TypeTag.CHAR, (int) ' ');
 
         collectionSymbol = javacElements.getTypeElement(Collection.class.getName());

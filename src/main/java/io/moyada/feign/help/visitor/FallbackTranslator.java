@@ -150,16 +150,23 @@ public class FallbackTranslator extends BaseTranslator {
         if (restype instanceof JCTree.JCPrimitiveTypeTree) {
             TypeTag baseType = ClassUtil.getBaseType(restype.toString());
             if (baseType == null) {
+                printer.warning("cannot recognized type: " + restype);
                 return syntaxTreeMaker.getBlock(TreeUtil.newStatement());
             }
 
             switch (baseType) {
                 case SHORT:
                 case INT:
-                case LONG:
-                case FLOAT:
-                case DOUBLE:
                     res = syntaxTreeMaker.zeroIntNode;
+                    break;
+                case FLOAT:
+                    res = syntaxTreeMaker.zeroFloatNode;
+                    break;
+                case DOUBLE:
+                    res = syntaxTreeMaker.zeroDoubleNode;
+                    break;
+                case LONG:
+                    res = syntaxTreeMaker.zeroLongNode;
                     break;
                 case BOOLEAN:
                     res = syntaxTreeMaker.falseNode;

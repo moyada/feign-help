@@ -228,8 +228,7 @@ public final class ElementUtil {
 
         if (node instanceof JCTree.JCTypeApply) {
             JCTree.JCTypeApply typeApply = (JCTree.JCTypeApply) node;
-            JCTree.JCFieldAccess paramtype = (JCTree.JCFieldAccess) typeApply.clazz;
-            return TreeNode.of(paramtype.sym.packge(), paramtype.name);
+            return get(typeApply.clazz);
         }
 
         if (node instanceof JCTree.JCPrimitiveTypeTree) {
