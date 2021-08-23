@@ -71,6 +71,10 @@ public class FeignHelpProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (roundEnv.processingOver()) {
+            return true;
+        }
+
         Collection<JCTree.JCClassDecl> factoryEles = ElementUtil.getFallbackFactory(trees, roundEnv);
         Collection<JCTree.JCClassDecl> fallbackEles = ElementUtil.getFallback(trees, roundEnv, factoryEles);
         if (factoryEles.isEmpty() && fallbackEles.isEmpty()) {

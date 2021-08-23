@@ -29,36 +29,23 @@ abstract class BaseTranslator extends TreeTranslator {
     }
 
     /**
-     * 创建类
+     * 添加类型引用
      * @param classDecl 接口
-     * @return 方法元素
      */
-    protected Name importClass(JCTree.JCClassDecl classDecl, String pkg, String claaName) {
-        Name fullname = syntaxTreeMaker.getName(pkg);
+    protected Name addImport(JCTree.JCClassDecl classDecl, String pkg, String claaName) {
+        Name pgkName = syntaxTreeMaker.getName(pkg);
         Name simplename = syntaxTreeMaker.getName(claaName);
-
-        JCTree.JCIdent fullbean = treeMaker.Ident(fullname);
-        JCTree.JCFieldAccess select = treeMaker.Select(fullbean, simplename);
-        JCTree.JCImport anImport = treeMaker.Import(select, false);
-
-        TreePath treePath = trees.getPath(classDecl.sym);
-        JCTree.JCCompilationUnit jccu = (JCTree.JCCompilationUnit) treePath.getCompilationUnit();
-        if (!jccu.defs.contains(select)) {
-            jccu.defs = jccu.defs.append(anImport);
-        }
+        addImport(classDecl, pgkName, simplename);
         return simplename;
     }
 
     /**
-     * 创建类
+     * 添加类型引用
      * @param classDecl 接口
      */
-    protected void addImport(JCTree.JCClassDecl classDecl, String pkg, String claaName) {
-        Name fullname = syntaxTreeMaker.getName(pkg);
-        Name simplename = syntaxTreeMaker.getName(claaName);
-
-        JCTree.JCIdent fullbean = treeMaker.Ident(fullname);
-        JCTree.JCFieldAccess select = treeMaker.Select(fullbean, simplename);
+    protected void addImport(JCTree.JCClassDecl classDecl, Name pkgName, Name className) {
+        JCTree.JCIdent fullbean = treeMaker.Ident(pkgName);
+        JCTree.JCFieldAccess select = treeMaker.Select(fullbean, className);
         JCTree.JCImport anImport = treeMaker.Import(select, false);
 
         TreePath treePath = trees.getPath(classDecl.sym);

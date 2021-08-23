@@ -11,6 +11,7 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import io.moyada.feign.help.annotation.FallbackBuild;
 import io.moyada.feign.help.annotation.FallbackFactoryBuild;
+import io.moyada.feign.help.entity.TreeNode;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
 
 import javax.annotation.processing.RoundEnvironment;
@@ -175,7 +176,40 @@ public final class ElementUtil {
                 }
             }
         }
-
         return treeMaker.MethodDef(mod, name, restype, typarams, params, thrown, null, null);
+    }
+
+    public static TreeNode[] analyze(JCTree.JCExpression node) {
+        if (node instanceof JCTree.JCArrayTypeTree) {
+            JCTree.JCArrayTypeTree typeApply = (JCTree.JCArrayTypeTree) node;
+
+            JCTree.JCExpression elemtype = typeApply.elemtype;
+            TreeNode eleNode = get(elemtype);
+
+            Type type = typeApply.type;
+            if (type.isPrimitive()) {
+                return TreeNode.asArr(eleNode);
+            }
+            TreeNode arrNode = TreeNode.of(type.asElement().owner.packge(), type.asElement().name);
+            return TreeNode.asArr(arrNode, eleNode);
+        }
+
+        return TreeNode.asArr(get(node));
+    }
+
+    private static TreeNode get(JCTree.JCExpression node) {
+        if (node instanceof JCTree.JCFieldAccess) {
+            JCTree.JCFieldAccess paramtype = (JCTree.JCFieldAccess) node;
+            return TreeNode.of(paramtype.sym.packge(), paramtype.name);
+        }
+
+        if (node instanceof JCTree.JCTypeApply) {
+            JCTree.JCTypeApply typeApply = (JCTree.JCTypeApply) node;
+            JCTree.JCFieldAccess paramtype = (JCTree.JCFieldAccess) typeApply.clazz;
+            return TreeNode.of(paramtype.sym.packge(), paramtype.name);
+        }
+
+        JCTree.JCIdent paramtype = (JCTree.JCIdent) node;
+        return TreeNode.of(paramtype.sym.packge(), paramtype.name);
     }
 }

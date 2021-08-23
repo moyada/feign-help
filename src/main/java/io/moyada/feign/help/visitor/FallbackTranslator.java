@@ -8,6 +8,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import io.moyada.feign.help.annotation.FallbackBuild;
 import io.moyada.feign.help.constant.ClassName;
+import io.moyada.feign.help.entity.TreeNode;
 import io.moyada.feign.help.support.Printer;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
 import io.moyada.feign.help.util.ElementUtil;
@@ -62,7 +63,7 @@ public class FallbackTranslator extends BaseTranslator {
             mod = treeMaker.Modifiers(Flags.PUBLIC);
         } else {
             // import
-            Name name = importClass(interClass, "org.springframework.stereotype", "Component");
+            Name name = addImport(interClass, "org.springframework.stereotype", "Component");
             JCTree.JCIdent bean = treeMaker.Ident(name);
             JCTree.JCAnnotation annotation = treeMaker.Annotation(bean, List.<JCTree.JCExpression>nil());
             mod = treeMaker.Modifiers(Flags.PUBLIC, List.of(annotation));
@@ -96,34 +97,23 @@ public class FallbackTranslator extends BaseTranslator {
     }
 
     private void addImport(JCTree.JCClassDecl thisClass, JCTree.JCMethodDecl methodDecl) {
-        JCTree.JCIdent restype;
-        if (methodDecl.restype instanceof JCTree.JCTypeApply) {
-            JCTree.JCTypeApply typeApply = (JCTree.JCTypeApply) methodDecl.restype;
-            restype = (JCTree.JCIdent) typeApply.clazz;
-        } else {
-            restype = (JCTree.JCIdent) methodDecl.restype;
+        TreeNode[] restype = ElementUtil.analyze(methodDecl.restype);
+        for (TreeNode node : restype) {
+            addImport(thisClass, node.pack.name, node.name);
         }
-        addImport(thisClass, restype.sym.packge().toString(), restype.name.toString());
 
         for (JCTree.JCVariableDecl param : methodDecl.params) {
-            if (param.vartype instanceof JCTree.JCFieldAccess) {
-                JCTree.JCFieldAccess paramtype = (JCTree.JCFieldAccess) param.vartype;
-                addImport(thisClass, paramtype.sym.packge().toString(), paramtype.name.toString());
-            } else {
-                if (param.vartype instanceof JCTree.JCTypeApply) {
-                    JCTree.JCTypeApply typeApply = (JCTree.JCTypeApply) param.vartype;
-                    JCTree.JCFieldAccess paramtype = (JCTree.JCFieldAccess) typeApply.clazz;
-                    addImport(thisClass, paramtype.sym.packge().toString(), paramtype.name.toString());
-                } else {
-                    JCTree.JCIdent paramtype = (JCTree.JCIdent) param.vartype;
-                    addImport(thisClass, paramtype.sym.packge().toString(), paramtype.name.toString());
-                }
+            TreeNode[] params = ElementUtil.analyze(param.vartype);
+            for (TreeNode node : params) {
+                addImport(thisClass, node.pack.name, node.name);
             }
         }
 
         for (JCTree.JCExpression expression : methodDecl.thrown) {
-            JCTree.JCIdent thro = (JCTree.JCIdent) expression;
-            addImport(thisClass, thro.sym.packge().toString(), thro.name.toString());
+            TreeNode[] treeNodes = ElementUtil.analyze(expression);
+            for (TreeNode node : treeNodes) {
+                addImport(thisClass, node.pack.name, node.name);
+            }
         }
     }
 

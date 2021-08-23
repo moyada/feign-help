@@ -82,7 +82,7 @@ public class FallbackFactoryTranslator extends BaseTranslator {
         String value = TreeUtil.getAnnotationValue(interClass.sym, FallbackFactoryBuild.class.getName(), "bean()");
         JCTree.JCModifiers mod;
         if (value == null || value.equals("true")) {
-            Name name = importClass(interClass, "org.springframework.stereotype", "Component");
+            Name name = addImport(interClass, "org.springframework.stereotype", "Component");
             JCTree.JCIdent bean = treeMaker.Ident(name);
             JCTree.JCAnnotation annotation = treeMaker.Annotation(bean, List.<JCTree.JCExpression>nil());
             mod = treeMaker.Modifiers(Flags.PUBLIC, List.of(annotation));
