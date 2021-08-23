@@ -21,6 +21,7 @@ public enum TypeTag {
     LT, // 小于
     PLUS, // + 操作
     BOT, // null
+    VOID, // void
     CLASS, // 对象
     ;
 }

@@ -13,6 +13,7 @@ import io.moyada.feign.help.annotation.FallbackBuild;
 import io.moyada.feign.help.annotation.FallbackFactoryBuild;
 import io.moyada.feign.help.entity.TreeNode;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
+import io.moyada.feign.help.support.TypeTag;
 
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
@@ -100,7 +101,7 @@ public final class ElementUtil {
                 for (Symbol symbol : ident.sym.getEnclosedElements()) {
                     if (symbol.getKind() == ElementKind.METHOD) {
                         Symbol.MethodSymbol methodSymbol = (Symbol.MethodSymbol) symbol;
-                        JCTree.JCMethodDecl methodDecl = buildFHMethodDecl(treeMaker, methodSymbol);
+                        JCTree.JCMethodDecl methodDecl = buildMethodDecl(treeMaker, methodSymbol);
                         list.add(methodDecl);
                     }
                 }
@@ -121,7 +122,7 @@ public final class ElementUtil {
         }
     }
 
-    private static JCTree.JCMethodDecl buildFHMethodDecl(SyntaxTreeMaker syntaxTreeMaker, Symbol.MethodSymbol symbol) {
+    private static JCTree.JCMethodDecl buildMethodDecl(SyntaxTreeMaker syntaxTreeMaker, Symbol.MethodSymbol symbol) {
         TreeMaker treeMaker = syntaxTreeMaker.getTreeMaker();
 
         JCTree.JCModifiers mod = treeMaker.Modifiers(Flags.PUBLIC);
@@ -129,7 +130,13 @@ public final class ElementUtil {
         Name name = symbol.name;
 
         Type returnType = symbol.getReturnType();
-        JCTree.JCIdent restype = treeMaker.Ident(returnType.tsym);
+        JCTree.JCExpression restype;
+        if (returnType.isPrimitiveOrVoid()) {
+            TypeTag baseType = ClassUtil.getBaseType(returnType.toString());
+            restype = syntaxTreeMaker.getPrimitiveType(baseType);
+        } else {
+            restype = treeMaker.Ident(returnType.tsym);
+        }
 
         List<JCTree.JCTypeParameter> typarams = null;
         List<Symbol.TypeVariableSymbol> typeParameters = symbol.getTypeParameters();
@@ -188,13 +195,29 @@ public final class ElementUtil {
 
             Type type = typeApply.type;
             if (type.isPrimitive()) {
+                if (eleNode == null) {
+                    return null;
+                }
                 return TreeNode.asArr(eleNode);
             }
             TreeNode arrNode = TreeNode.of(type.asElement().owner.packge(), type.asElement().name);
+            if (arrNode == null) {
+                if (eleNode == null) {
+                    return null;
+                }
+                return TreeNode.asArr(eleNode);
+            }
+            if (eleNode == null) {
+                return TreeNode.asArr(arrNode);
+            }
             return TreeNode.asArr(arrNode, eleNode);
         }
 
-        return TreeNode.asArr(get(node));
+        TreeNode treeNode = get(node);
+        if (treeNode == null) {
+            return null;
+        }
+        return TreeNode.asArr(treeNode);
     }
 
     private static TreeNode get(JCTree.JCExpression node) {
@@ -209,6 +232,9 @@ public final class ElementUtil {
             return TreeNode.of(paramtype.sym.packge(), paramtype.name);
         }
 
+        if (node instanceof JCTree.JCPrimitiveTypeTree) {
+            return null;
+        }
         JCTree.JCIdent paramtype = (JCTree.JCIdent) node;
         return TreeNode.of(paramtype.sym.packge(), paramtype.name);
     }

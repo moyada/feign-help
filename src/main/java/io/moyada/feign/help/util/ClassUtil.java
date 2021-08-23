@@ -1,5 +1,6 @@
 package io.moyada.feign.help.util;
 
+import io.moyada.feign.help.support.TypeTag;
 import sun.misc.Unsafe;
 
 import java.lang.ref.SoftReference;
@@ -166,5 +167,41 @@ public final class ClassUtil {
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 返回基本类型标签
+     * @param name 类名
+     * @return 符合映射则返回对应标签，否则返回 null
+     */
+    public static TypeTag getBaseType(String name) {
+        if (name.equals("byte")) {
+            return TypeTag.BYTE;
+        }
+        if (name.equals("short")) {
+            return TypeTag.SHORT;
+        }
+        if (name.equals("int")) {
+            return TypeTag.INT;
+        }
+        if (name.equals("long")) {
+            return TypeTag.LONG;
+        }
+        if (name.equals("float")) {
+            return TypeTag.FLOAT;
+        }
+        if (name.equals("double")) {
+            return TypeTag.DOUBLE;
+        }
+        if (name.equals("boolean")) {
+            return TypeTag.BOOLEAN;
+        }
+        if (name.equals("char")) {
+            return TypeTag.CHAR;
+        }
+        if (name.equals("void")) {
+            return TypeTag.VOID;
+        }
+        return null;
     }
 }

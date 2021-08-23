@@ -11,6 +11,8 @@ import io.moyada.feign.help.constant.ClassName;
 import io.moyada.feign.help.entity.TreeNode;
 import io.moyada.feign.help.support.Printer;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
+import io.moyada.feign.help.support.TypeTag;
+import io.moyada.feign.help.util.ClassUtil;
 import io.moyada.feign.help.util.ElementUtil;
 import io.moyada.feign.help.util.TreeUtil;
 
@@ -98,21 +100,27 @@ public class FallbackTranslator extends BaseTranslator {
 
     private void addImport(JCTree.JCClassDecl thisClass, JCTree.JCMethodDecl methodDecl) {
         TreeNode[] restype = ElementUtil.analyze(methodDecl.restype);
-        for (TreeNode node : restype) {
-            addImport(thisClass, node.pack.name, node.name);
+        if (restype != null) {
+            for (TreeNode node : restype) {
+                addImport(thisClass, node.pack.fullname, node.name);
+            }
         }
 
         for (JCTree.JCVariableDecl param : methodDecl.params) {
             TreeNode[] params = ElementUtil.analyze(param.vartype);
-            for (TreeNode node : params) {
-                addImport(thisClass, node.pack.name, node.name);
+            if (params != null) {
+                for (TreeNode node : params) {
+                    addImport(thisClass, node.pack.fullname, node.name);
+                }
             }
         }
 
         for (JCTree.JCExpression expression : methodDecl.thrown) {
             TreeNode[] treeNodes = ElementUtil.analyze(expression);
-            for (TreeNode node : treeNodes) {
-                addImport(thisClass, node.pack.name, node.name);
+            if (treeNodes != null) {
+                for (TreeNode node : treeNodes) {
+                    addImport(thisClass, node.pack.fullname, node.name);
+                }
             }
         }
     }
@@ -127,19 +135,47 @@ public class FallbackTranslator extends BaseTranslator {
         for (JCTree.JCVariableDecl param : jcMethodDecl.params) {
             param.mods.annotations = List.nil();
         }
-
         return treeMaker.MethodDef(mod,
                 jcMethodDecl.name,
                 jcMethodDecl.restype,
                 jcMethodDecl.typarams,
                 jcMethodDecl.params,
                 jcMethodDecl.thrown,
-                emptyBody(), null);
+                emptyBody(jcMethodDecl.restype), null);
     }
 
-    private JCTree.JCBlock emptyBody() {
+    private JCTree.JCBlock emptyBody(JCTree.JCExpression restype) {
+        JCTree.JCLiteral res;
+
+        if (restype instanceof JCTree.JCPrimitiveTypeTree) {
+            TypeTag baseType = ClassUtil.getBaseType(restype.toString());
+            if (baseType == null) {
+                return syntaxTreeMaker.getBlock(TreeUtil.newStatement());
+            }
+
+            switch (baseType) {
+                case SHORT:
+                case INT:
+                case LONG:
+                case FLOAT:
+                case DOUBLE:
+                    res = syntaxTreeMaker.zeroIntNode;
+                    break;
+                case BOOLEAN:
+                    res = syntaxTreeMaker.falseNode;
+                    break;
+                case CHAR:
+                    res = syntaxTreeMaker.emptyCh;
+                    break;
+                default:
+                    return syntaxTreeMaker.getBlock(TreeUtil.newStatement());
+            }
+        } else {
+            res = syntaxTreeMaker.nullNode;
+        }
+
         ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
-        JCTree.JCReturn returnStatement = treeMaker.Return(syntaxTreeMaker.nullNode);
+        JCTree.JCReturn returnStatement = treeMaker.Return(res);
         statements.add(returnStatement);
         return syntaxTreeMaker.getBlock(statements);
     }

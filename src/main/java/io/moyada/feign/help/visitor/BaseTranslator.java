@@ -30,7 +30,10 @@ abstract class BaseTranslator extends TreeTranslator {
 
     /**
      * 添加类型引用
-     * @param classDecl 接口
+     * @param classDecl 类
+     * @param pkg 包名
+     * @param claaName 类名
+     * @return 类名引用
      */
     protected Name addImport(JCTree.JCClassDecl classDecl, String pkg, String claaName) {
         Name pgkName = syntaxTreeMaker.getName(pkg);
@@ -41,7 +44,9 @@ abstract class BaseTranslator extends TreeTranslator {
 
     /**
      * 添加类型引用
-     * @param classDecl 接口
+     * @param classDecl 类
+     * @param pkgName 包名
+     * @param className 类名
      */
     protected void addImport(JCTree.JCClassDecl classDecl, Name pkgName, Name className) {
         JCTree.JCIdent fullbean = treeMaker.Ident(pkgName);
@@ -57,7 +62,8 @@ abstract class BaseTranslator extends TreeTranslator {
 
     /**
      * 创建类
-     * @param interClass 接口
+     * @param interClass 主类
+     * @param classDecl 内部类
      */
     protected void appendClass(JCTree.JCClassDecl interClass, JCTree.JCClassDecl classDecl) {
         PosScanner posScanner = new PosScanner(interClass);

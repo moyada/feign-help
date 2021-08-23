@@ -28,6 +28,8 @@ import java.util.Set;
 @SupportedAnnotationTypes("io.moyada.feign.help.annotation.*")
 public class FeignHelpProcessor extends AbstractProcessor {
 
+    private volatile boolean done = false;
+
     // 处理器上下文
     private Context context;
     // 文件处理器
@@ -71,14 +73,23 @@ public class FeignHelpProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (done) {
+            return true;
+        }
         if (roundEnv.processingOver()) {
             return true;
         }
+        doProcess(annotations, roundEnv);
+        printer.info("Feign Help Processor Completed.");
+        done = true;
+        return true;
+    }
 
+    private void doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Collection<JCTree.JCClassDecl> factoryEles = ElementUtil.getFallbackFactory(trees, roundEnv);
         Collection<JCTree.JCClassDecl> fallbackEles = ElementUtil.getFallback(trees, roundEnv, factoryEles);
         if (factoryEles.isEmpty() && fallbackEles.isEmpty()) {
-            return true;
+            return;
         }
 
         SyntaxTreeMaker syntaxTreeMaker = SyntaxTreeMaker.newInstance(context);
@@ -90,7 +101,6 @@ public class FeignHelpProcessor extends AbstractProcessor {
         for (JCTree.JCClassDecl ele: factoryEles) {
             ele.accept(translator);
         }
-        return true;
     }
 
     @Override
