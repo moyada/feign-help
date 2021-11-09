@@ -186,4 +186,12 @@ public class FallbackTranslator extends BaseTranslator {
         statements.add(returnStatement);
         return syntaxTreeMaker.getBlock(statements);
     }
+
+    private JCTree.JCReturn staticMethod() {
+        JCTree.JCExpression fal = syntaxTreeMaker.newElement(TypeTag.BOOLEAN, 0);
+        List<JCTree.JCExpression> paramType = List.of(fal);
+        JCTree.JCExpression clazzType = syntaxTreeMaker.findClass("so.dian.video.BizResult");
+        JCTree.JCExpression method = syntaxTreeMaker.getMethod(clazzType, "of", paramType);
+        return treeMaker.Return(method);
+    }
 }
