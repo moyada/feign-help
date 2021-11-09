@@ -33,8 +33,8 @@ public class SyntaxTreeMaker {
     private final Object namesInstance;
 
     // 类型集合
-    private final Types types;
-    private final Symtab symtab;
+    public final Types types;
+    public final Symtab symtab;
 
     // null 表达式
     public final JCTree.JCLiteral nullNode;
