@@ -2,6 +2,7 @@ package io.moyada.feign.help.support;
 
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
@@ -33,6 +34,7 @@ public class SyntaxTreeMaker {
 
     // 类型集合
     private final Types types;
+    private final Symtab symtab;
 
     // null 表达式
     public final JCTree.JCLiteral nullNode;
@@ -64,6 +66,7 @@ public class SyntaxTreeMaker {
         this.namesInstance = newNameInstance(context);
         this.javacElements = JavacElements.instance(context);
         this.types = Types.instance(context);
+        this.symtab = Symtab.instance(context);
 
         this.nullNode = newElement(TypeTag.BOT, null);
         this.trueNode = newElement(TypeTag.BOOLEAN, 1);
@@ -299,6 +302,16 @@ public class SyntaxTreeMaker {
     public JCTree.JCExpression NewClass(String className, List<JCTree.JCExpression> params) {
         return treeMaker.NewClass(null, TreeUtil.emptyExpression(), findClass(className), params, null);
     }
+
+//    /**
+//     * 获取构造函数
+//     * @param className 类名
+//     * @param params 参数
+//     * @return 构造函数语句
+//     */
+//    public Symbol.ClassSymbol createSymbol(String className) {
+//        return this.symtab.classes.get()
+//    }
 
     /**
      * 获取原生类型

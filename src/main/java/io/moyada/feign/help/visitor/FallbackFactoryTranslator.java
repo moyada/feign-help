@@ -3,6 +3,7 @@ package io.moyada.feign.help.visitor;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -63,6 +64,10 @@ public class FallbackFactoryTranslator extends BaseTranslator {
 
         JCTree.JCClassDecl classDecl = createClass(jcClassDecl);
         super.appendClass(jcClassDecl, classDecl);
+        // 修改@FeignClient注解
+        updateFeignClient(jcClassDecl);
+
+        printer.info(jcClassDecl.toString());
     }
 
     /**
@@ -135,5 +140,118 @@ public class FallbackFactoryTranslator extends BaseTranslator {
         JCTree.JCReturn state = treeMaker.Return(newExp);
         statements.add(state);
         return syntaxTreeMaker.getBlock(statements);
+    }
+
+    private void updateFeignClient(JCTree.JCClassDecl interClass) {
+        for (JCTree.JCAnnotation anno : interClass.mods.annotations) {
+            String className = anno.annotationType.type.toString();
+            if (!className.equals("org.springframework.cloud.openfeign.FeignClient")) {
+                continue;
+            }
+
+            boolean hasName = false;
+            List<JCTree.JCExpression> args = anno.args;
+            for (JCTree.JCExpression arg : args) {
+                if (arg instanceof JCTree.JCAssign) {
+                    JCTree.JCAssign assign = (JCTree.JCAssign) arg;
+                    String name = assign.lhs.toString();
+
+                    if (!name.equals("fallbackFactory")) {
+                        continue;
+                    }
+                    hasName = true;
+
+                    JCTree.JCFieldAccess indent =(JCTree.JCFieldAccess) assign.rhs;
+
+                    printer.info(indent.name.toString());
+                    printer.info(indent.type.toString());
+                    printer.info(indent.selected.toString());
+                    printer.info(indent.selected.getClass().toString());
+                    printer.info(indent.toString());
+
+                    printer.info("sym ====");
+                    // [INFO] class com.sun.tools.javac.code.Symbol$ClassSymbol
+                    printer.info(indent.sym.getClass().toString());
+                    // [INFO] name class
+                    printer.info("name " + indent.sym.name.toString());
+                    // type class com.sun.tools.javac.code.Type$ErrorType:so.dian.azeroth.guldan.components.client.ManageSubjectClient.FallbackFactory.class
+                    printer.info("type " + indent.sym.type.getClass().toString() + ":" + indent.sym.type);
+                    Type.ErrorType errorType = (Type.ErrorType) indent.sym.type;
+                    // [INFO] so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory
+                    // [INFO] so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory.class
+                    printer.info(errorType.getOriginalType().toString());
+                    printer.info(errorType.tsym.toString());
+
+                    // owner class com.sun.tools.javac.code.Symbol$ClassSymbol:so.dian.azeroth.guldan.components.client.ManageSubjectClient.FallbackFactory
+                    printer.info("owner " + indent.sym.owner.getClass().toString() + ":" + indent.sym.owner);
+
+                    Symbol.ClassSymbol owner = (Symbol.ClassSymbol) indent.sym.owner;
+                    newSymbol(owner);
+
+                    //[INFO] fname so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory.class
+                    printer.info("fname " + indent.sym.getQualifiedName().toString());
+                    //[INFO] kind 63
+                    printer.info("kind " + indent.sym.kind);
+                    //[INFO] flags_field 1073741833
+                    printer.info("flags_field" + indent.sym.flags_field);
+
+//                    Name sname = syntaxTreeMaker.getName("class");
+//
+//                    new Symbol.ClassSymbol();
+//                    JCTree.JCFieldAccess classIdent =
+//                            treeMaker.Select(treeMaker.Ident(interClass.sym.packge()), interClass.sym.name);
+//                    String fname = interClass.sym.toString() + "$FallbackFactory.class";
+//                    printer.info(fname);
+//
+//                    Symbol.ClassSymbol symbol = syntaxTreeMaker.getTypeElement(fname);
+//                    printer.info("" + (symbol == null));
+
+//                    Name infer = syntaxTreeMaker.getName(interClass.name.toString() + ".FallbackFactory.class");
+//                    JCTree.JCExpression select = treeMaker.Ident(infer);
+//                    assign.rhs = select;
+//                    printer.info("  >  ");
+//
+////                    printer.info(select.name.toString());
+////                    printer.info(select.sym.toString());
+////                    printer.info(select.type.toString());
+////                    printer.info(select.selected.toString());
+//                    printer.info(select.toString());
+
+                    printer.info("-----------");
+                }
+            }
+
+            if (!hasName) {
+                JCTree.JCIdent l = treeMaker.Ident(syntaxTreeMaker.getName("fallbackFactory"));
+                Name infer = syntaxTreeMaker.getName(interClass.name.toString() + ".FallbackFactory.class");
+                JCTree.JCExpression r = treeMaker.Ident(infer);
+                JCTree.JCAssign ar = treeMaker.Assign(l, r);
+                anno.args = args.append(ar);
+            }
+        }
+
+    }
+
+    private void newSymbol(Symbol.ClassSymbol owner) {
+        printer.info("++^^^^^^^^^++++");
+        //[INFO] name FallbackFactory
+        Name sname = syntaxTreeMaker.getName("FallbackFactory");
+        //[INFO] type class com.sun.tools.javac.code.Type$ErrorType:so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory
+        //[INFO] owner class com.sun.tools.javac.code.Symbol$ClassSymbol:so.dian.azeroth.guldan.components.client.ManageInfoClient
+        //[INFO] fname so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory
+        printer.info("name " + owner.name.toString());
+        printer.info("type " + owner.type.getClass().toString() + ":" + owner.type);
+        printer.info("owner " + owner.owner.getClass().toString() + ":" + owner.owner);
+        printer.info("fname " + owner.getQualifiedName().toString());
+        //[INFO] kind 63
+        printer.info("kind " + owner.kind);
+        //[INFO] flags_field 1073741833
+        printer.info("flags_field" + owner.flags_field);
+
+        // [INFO] so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory
+        //[INFO] FallbackFactory
+        //[INFO] so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory
+        //[INFO] so.dian.azeroth.guldan.components.client.ManageInfoClient
+//        Symbol.ClassSymbol owner1 = new Symbol.ClassSymbol();
     }
 }
