@@ -8,6 +8,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import io.moyada.feign.help.annotation.FallbackBuild;
 import io.moyada.feign.help.constant.ClassName;
+import io.moyada.feign.help.entity.ReturnBuild;
 import io.moyada.feign.help.entity.TreeNode;
 import io.moyada.feign.help.support.Printer;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
@@ -26,9 +27,12 @@ public class FallbackTranslator extends BaseTranslator {
 
     private final Name name;
 
+    private final ReturnBuild returnBuild;
+
     public FallbackTranslator(Trees trees, SyntaxTreeMaker syntaxTreeMaker, Printer printer) {
         super(trees, syntaxTreeMaker, printer);
         name = syntaxTreeMaker.getName(ClassName.BEAN_NAME);
+        returnBuild = new ReturnBuild(syntaxTreeMaker);
     }
 
     @Override
@@ -85,10 +89,12 @@ public class FallbackTranslator extends BaseTranslator {
             return List.<JCTree>nil();
         }
 
+        JCTree.JCReturn buildReturn = returnBuild.getReturn(interClass);
+
         List<JCTree> list = null;
         for (JCTree.JCMethodDecl methodDecl : methodList) {
             addImport(interClass, methodDecl);
-            JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl);
+            JCTree.JCMethodDecl jcMethod = createJCMethod(methodDecl, buildReturn);
             if (list == null) {
                 list = List.of((JCTree) jcMethod);
             } else {
@@ -130,68 +136,74 @@ public class FallbackTranslator extends BaseTranslator {
      * @param jcMethodDecl 方法
      * @return 方法元素
      */
-    private JCTree.JCMethodDecl createJCMethod(JCTree.JCMethodDecl jcMethodDecl) {
+    private JCTree.JCMethodDecl createJCMethod(JCTree.JCMethodDecl jcMethodDecl, JCTree.JCReturn buildReturn) {
         JCTree.JCModifiers mod = treeMaker.Modifiers(Flags.PUBLIC);
         for (JCTree.JCVariableDecl param : jcMethodDecl.params) {
             param.mods.annotations = List.nil();
         }
+
+        JCTree.JCBlock body = getBody(jcMethodDecl.restype, buildReturn);
         return treeMaker.MethodDef(mod,
                 jcMethodDecl.name,
                 jcMethodDecl.restype,
                 jcMethodDecl.typarams,
                 jcMethodDecl.params,
                 jcMethodDecl.thrown,
-                emptyBody(jcMethodDecl.restype), null);
+                body, null);
     }
 
-    private JCTree.JCBlock emptyBody(JCTree.JCExpression restype) {
-        JCTree.JCLiteral res;
 
-        if (restype instanceof JCTree.JCPrimitiveTypeTree) {
-            TypeTag baseType = ClassUtil.getBaseType(restype.toString());
-            if (baseType == null) {
-                printer.warning("cannot recognized type: " + restype);
-                return syntaxTreeMaker.getBlock(TreeUtil.newStatement());
-            }
+    private JCTree.JCBlock getBody(JCTree.JCExpression restype, JCTree.JCReturn buildReturn) {
+        ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
 
-            switch (baseType) {
-                case SHORT:
-                case INT:
-                    res = syntaxTreeMaker.zeroIntNode;
-                    break;
-                case FLOAT:
-                    res = syntaxTreeMaker.zeroFloatNode;
-                    break;
-                case DOUBLE:
-                    res = syntaxTreeMaker.zeroDoubleNode;
-                    break;
-                case LONG:
-                    res = syntaxTreeMaker.zeroLongNode;
-                    break;
-                case BOOLEAN:
-                    res = syntaxTreeMaker.falseNode;
-                    break;
-                case CHAR:
-                    res = syntaxTreeMaker.emptyCh;
-                    break;
-                default:
-                    return syntaxTreeMaker.getBlock(TreeUtil.newStatement());
-            }
+        JCTree.JCReturn jcReturn;
+        if (buildReturn == null) {
+            jcReturn = baseReturn(restype);
         } else {
-            res = syntaxTreeMaker.nullNode;
+            jcReturn = buildReturn;
         }
 
-        ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
-        JCTree.JCReturn returnStatement = treeMaker.Return(res);
-        statements.add(returnStatement);
+        if (jcReturn != null) {
+            statements.add(jcReturn);
+        }
         return syntaxTreeMaker.getBlock(statements);
     }
 
-    private JCTree.JCReturn staticMethod() {
-        JCTree.JCExpression fal = syntaxTreeMaker.newElement(TypeTag.BOOLEAN, 0);
-        List<JCTree.JCExpression> paramType = List.of(fal);
-        JCTree.JCExpression clazzType = syntaxTreeMaker.findClass("so.dian.video.BizResult");
-        JCTree.JCExpression method = syntaxTreeMaker.getMethod(clazzType, "of", paramType);
-        return treeMaker.Return(method);
+    private JCTree.JCReturn baseReturn(JCTree.JCExpression restype) {
+        if (!(restype instanceof JCTree.JCPrimitiveTypeTree)) {
+            return treeMaker.Return(syntaxTreeMaker.nullNode);
+        }
+
+        TypeTag baseType = ClassUtil.getBaseType(restype.toString());
+        if (baseType == null) {
+            printer.warning("cannot recognized type: " + restype);
+            return null;
+        }
+
+        JCTree.JCLiteral res;
+        switch (baseType) {
+            case SHORT:
+            case INT:
+                res = syntaxTreeMaker.zeroIntNode;
+                break;
+            case FLOAT:
+                res = syntaxTreeMaker.zeroFloatNode;
+                break;
+            case DOUBLE:
+                res = syntaxTreeMaker.zeroDoubleNode;
+                break;
+            case LONG:
+                res = syntaxTreeMaker.zeroLongNode;
+                break;
+            case BOOLEAN:
+                res = syntaxTreeMaker.falseNode;
+                break;
+            case CHAR:
+                res = syntaxTreeMaker.emptyCh;
+                break;
+            default:
+                return null;
+        }
+        return treeMaker.Return(res);
     }
 }

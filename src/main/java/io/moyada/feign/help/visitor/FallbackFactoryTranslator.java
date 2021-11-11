@@ -134,7 +134,7 @@ public class FallbackFactoryTranslator extends BaseTranslator {
     private JCTree.JCBlock newFactory(JCTree.JCClassDecl interClass) {
         ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
         String name = interClass.name.toString() + "." + ClassName.BEAN_NAME;
-        JCTree.JCExpression newExp = syntaxTreeMaker.NewClass(name, List.<JCTree.JCExpression>nil());
+        JCTree.JCExpression newExp = syntaxTreeMaker.NewObject(name, List.<JCTree.JCExpression>nil());
         JCTree.JCReturn state = treeMaker.Return(newExp);
         statements.add(state);
         return syntaxTreeMaker.getBlock(statements);
@@ -154,14 +154,11 @@ public class FallbackFactoryTranslator extends BaseTranslator {
                 if (arg instanceof JCTree.JCAssign) {
                     JCTree.JCAssign assign = (JCTree.JCAssign) arg;
                     String name = assign.lhs.toString();
-
                     if (!name.equals("fallbackFactory")) {
                         continue;
                     }
                     hasName = true;
-
-                    JCTree.JCFieldAccess select = newSymbol(interClass);
-                    assign.rhs = select;
+                    assign.rhs = newSymbol(interClass);
                 }
             }
 
@@ -175,93 +172,28 @@ public class FallbackFactoryTranslator extends BaseTranslator {
 
     }
 
+    /**
+     * 创建类中FallbackFactory的class对象引用
+     * @param interClass 父类
+     * @return class引用
+     */
     private JCTree.JCFieldAccess newSymbol(JCTree.JCClassDecl interClass) {
-        Symbol.ClassSymbol factorySymbol = factorySymbol(interClass.sym, "FallbackFactory");
-        Symbol.ClassSymbol factoryClassSymbol = factorySymbol(factorySymbol, "class");
-        Name fname = syntaxTreeMaker.getName("class");
+        // FallbackFactory 类符号
+        Symbol.ClassSymbol factorySymbol = syntaxTreeMaker.newClassSymbol(interClass.sym, "FallbackFactory");
+        // FallbackFactory.class 类符号
+        Symbol.ClassSymbol factoryClassSymbol = syntaxTreeMaker.newClassSymbol(factorySymbol, "class");
 
-        Type ut = syntaxTreeMaker.symtab.errType;
-        Type.ErrorType ftype = new Type.ErrorType(factorySymbol, ut);
-        Type.ErrorType errType = new Type.ErrorType(ftype, factoryClassSymbol);
-
-        JCTree.JCFieldAccess classIdent = treeMaker.Select(treeMaker.Ident(syntaxTreeMaker.getName("UserRemote")), syntaxTreeMaker.getName("FallbackFactory"));
+        // FallbackFactory 引用
+        JCTree.JCFieldAccess classIdent = treeMaker.Select(treeMaker.Ident(interClass.name), syntaxTreeMaker.getName("FallbackFactory"));
+        Type.ErrorType ftype = new Type.ErrorType(factorySymbol, syntaxTreeMaker.symtab.errType);
         classIdent.setType(ftype);
         classIdent.sym = factorySymbol;
 
-        // UserRemote.FallbackFactory
-
+        // FallbackFactory.class 引用
+        Name fname = syntaxTreeMaker.getName("class");
         JCTree.JCFieldAccess select = treeMaker.Select(classIdent, fname);
+        Type.ErrorType errType = new Type.ErrorType(ftype, factoryClassSymbol);
         select.setType(errType);
         return select;
     }
-
-//        Name sname = syntaxTreeMaker.getName("class");
-//        Type.ErrorType stype = new Type.ErrorType(interClass.sym, factorySymbol);
-//
-//        Type.ErrorType originalType = (Type.ErrorType) errorType.getOriginalType();
-//        printer.info(originalType.getOriginalType().getClass() + ":" + originalType.getOriginalType().toString());
-//        printer.info(originalType.tsym.getClass() + ":" + originalType.tsym.toString());
-//
-//
-//        //[INFO] owner class com.sun.tools.javac.code.Symbol$ClassSymbol:so.dian.azeroth.guldan.components.client.ManageInfoClient
-//        printer.info("owner " + owner.owner.getClass().toString() + ":" + owner.owner);
-//        Symbol.ClassSymbol sowner = interClass.sym;
-//
-//        //[INFO] kind 63
-//        printer.info("kind " + owner.kind);
-//        //[INFO] flags_field 1073741833
-//        printer.info("flags_field" + owner.flags_field);
-//
-//        Symbol.ClassSymbol fowner = new Symbol.ClassSymbol(1073741833L, sname, stype, sowner);
-//        return fowner;
-//    }
-
-    private Symbol.ClassSymbol factorySymbol(Symbol.ClassSymbol owner, String name) {
-        Name sname = syntaxTreeMaker.getName(name);
-        Type ut = syntaxTreeMaker.symtab.errType;
-        Type.ErrorType stype = new Type.ErrorType(owner, ut);
-        Symbol.ClassSymbol fowner = new Symbol.ClassSymbol(1073741833L, sname, stype, owner);
-        return fowner;
-    }
-
-//    private Symbol.ClassSymbol factorySymbol(JCTree.JCClassDecl interClass, Symbol.ClassSymbol owner) {
-//        printer.info("++^^^^^^^^^++++");
-//        //[INFO] name FallbackFactory
-//        Name sname = syntaxTreeMaker.getName("FallbackFactory");
-//        printer.info("name " + owner.name.toString());
-//
-//        //[INFO] type class com.sun.tools.javac.code.Type$ErrorType:so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory
-//        printer.info("type " + owner.type.getClass().toString() + ":" + owner.type);
-//        Type.ErrorType errorType = (Type.ErrorType) owner.type;
-//        // [INFO] so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory
-//        // [INFO] so.dian.azeroth.guldan.components.client.ManageInfoClient.FallbackFactory.class
-//        Type ut = syntaxTreeMaker.symtab.errType;
-//        printer.info(ut.getClass() + ":" + ut.toString());
-//        printer.info(errorType.getOriginalType().getClass() + ":" + errorType.getOriginalType().toString());
-//        printer.info(errorType.tsym.getClass() + ":" + errorType.tsym.toString());
-//
-//        Type.ErrorType stype = new Type.ErrorType(interClass.sym, ut);
-//
-//        Type.ErrorType originalType = (Type.ErrorType) errorType.getOriginalType();
-//        printer.info(originalType.getOriginalType().getClass() + ":" + originalType.getOriginalType().toString());
-//        printer.info(originalType.tsym.getClass() + ":" + originalType.tsym.toString());
-//
-//
-//        Symbol.ClassSymbol tsym = (Symbol.ClassSymbol) originalType.tsym;
-//        printer.info(tsym.name.toString());
-//        printer.info(tsym.type.getClass() + ":" + tsym.type.toString());
-//        printer.info(tsym.owner.getClass() + ":" + tsym.owner.toString());
-//
-//        //[INFO] owner class com.sun.tools.javac.code.Symbol$ClassSymbol:so.dian.azeroth.guldan.components.client.ManageInfoClient
-//        printer.info("owner " + owner.owner.getClass().toString() + ":" + owner.owner);
-//        Symbol.ClassSymbol sowner = interClass.sym;
-//
-//        //[INFO] kind 63
-//        printer.info("kind " + owner.kind);
-//        //[INFO] flags_field 1073741833
-//        printer.info("flags_field" + owner.flags_field);
-//
-//        Symbol.ClassSymbol fowner = new Symbol.ClassSymbol(1073741833L, sname, stype, sowner);
-//        return fowner;
-//    }
 }

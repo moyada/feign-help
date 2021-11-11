@@ -5,6 +5,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import io.moyada.feign.help.support.TypeTag;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
@@ -108,6 +109,37 @@ public final class TreeUtil {
      */
     public static String getOriginalTypeName(Symbol symbol) {
         return symbol.asType().asElement().toString();
+    }
+
+    /**
+     * 获取类型节点构造值
+     * @param baseType 类型标签
+     * @param value 输入数据
+     * @return 元素构造值
+     */
+    public static Object getValue(TypeTag baseType, String value) {
+        if (baseType == TypeTag.CLASS) {
+            return value;
+        }
+
+        if (baseType == TypeTag.BOOLEAN) {
+            if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
+                return 1;
+            }
+            if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
+                return 0;
+            }
+            return null;
+        }
+
+        if (baseType == TypeTag.CHAR) {
+            if (value.length() != 1) {
+                return null;
+            }
+            return (int) value.charAt(0);
+        }
+
+        return TypeUtil.getNumberValue(TypeUtil.getNumType(baseType.toString().toLowerCase()), value);
     }
 
     /**

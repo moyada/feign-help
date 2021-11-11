@@ -1,9 +1,6 @@
 package io.moyada.feign.help.support;
 
-import com.sun.tools.javac.code.Attribute;
-import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -219,7 +216,7 @@ public class SyntaxTreeMaker {
      * @return 异常语句元素
      */
     public JCTree.JCStatement newMsgThrow(String exceptionTypeName, JCTree.JCExpression message) {
-        JCTree.JCExpression exceptionInstance = NewClass(exceptionTypeName, List.of(message));
+        JCTree.JCExpression exceptionInstance = NewObject(exceptionTypeName, List.of(message));
         return newThrow(exceptionInstance);
     }
 
@@ -299,7 +296,7 @@ public class SyntaxTreeMaker {
      * @param params 参数
      * @return 构造函数语句
      */
-    public JCTree.JCExpression NewClass(String className, List<JCTree.JCExpression> params) {
+    public JCTree.JCExpression NewObject(String className, List<JCTree.JCExpression> params) {
         return treeMaker.NewClass(null, TreeUtil.emptyExpression(), findClass(className), params, null);
     }
 
@@ -401,5 +398,18 @@ public class SyntaxTreeMaker {
      */
     public JCTree.JCBlock getBlock(ListBuffer<JCTree.JCStatement> statements) {
         return treeMaker.Block(0, statements.toList());
+    }
+
+    /**
+     * 创建类中的类符号标识
+     * @param owner
+     * @param name
+     * @return
+     */
+    public Symbol.ClassSymbol newClassSymbol(Symbol.ClassSymbol owner, String name) {
+        Name sname = getName(name); // 创建符号名
+        Type.ErrorType stype = new Type.ErrorType(owner, symtab.errType); //
+        Symbol.ClassSymbol symbol = new Symbol.ClassSymbol(1073741833L, sname, stype, owner);
+        return symbol;
     }
 }

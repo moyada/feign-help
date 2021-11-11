@@ -41,7 +41,7 @@ public interface UserApi {
 
 ```
 @FallbackFactoryBuild
-@FeignClient(name = "user", fallbackFactory = UserRemote.FallbackFactory.class)
+@FeignClient(name = "user")
 public interface UserRemote extends UserApi {
 }
 
@@ -82,6 +82,26 @@ public interface UserRemote extends UserApi {
         }
     }
 }
+```
+
+#### 指定方法返回值
+```
+@FeignReturn(target = Result.class, staticMethod = "error", params = ["500", "msg"])
+@FallbackFactoryBuild
+@FeignClient(name = "user")
+public interface UserRemote extends UserApi {
+}
+
+...
+
+
+public interface UserRemote extends UserApi {
+
+    public Result<Boolean> deleteUser(@RequestBody UserRequest data) {
+         return Result.error(500, "msg");
+    }
+}
+
 ```
 
 ## Contributors
