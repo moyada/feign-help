@@ -29,7 +29,19 @@ public class ReturnBuild {
         if (returnAttr == null) {
             return null;
         }
+
         String target = TreeUtil.getAnnotationValue(classDecl.sym, FeignReturn.class.getName(), "target()");
+        if (TypeUtil.isPrimitive(target) || TypeUtil.isStr(target)) {
+            if (returnAttr.params().length != 1) {
+                throw new RuntimeException("FeignReturn params() size error: " + target);
+            }
+
+            TypeTag baseType = TypeUtil.getBaseType(target);
+            Object data = TreeUtil.getValue(baseType, returnAttr.params()[0]);
+            JCTree.JCExpression argsVal = syntaxTreeMaker.newElement(baseType, data);
+            return syntaxTreeMaker.getTreeMaker().Return(argsVal);
+        }
+
         Symbol.ClassSymbol targetClass = syntaxTreeMaker.getTypeElement(target);
         if (targetClass == null) {
             throw new RuntimeException("FeignReturn target() cannot be found: " + target);
@@ -44,60 +56,43 @@ public class ReturnBuild {
 
     private JCTree.JCReturn constMethod(String className, Symbol.ClassSymbol targetClass, String[] params) {
         // 类构造方法
-        List<JCTree.JCExpression> paramType = getParamType(targetClass, true, params);
-        if (null == paramType) {
+        List<JCTree.JCExpression> paramList = getConstParam(targetClass, params);
+        if (null == paramList) {
             // 无匹配的构造方法
             throw new RuntimeException("[Return Error] Can't find match param constructor from " + className + " by " + Arrays.toString(params));
         }
-        JCTree.JCExpression jcExpression = syntaxTreeMaker.NewObject(className, paramType);
+        JCTree.JCExpression jcExpression = syntaxTreeMaker.NewObject(className, paramList);
         return syntaxTreeMaker.getTreeMaker().Return(jcExpression);
     }
 
     private JCTree.JCReturn staticMethod(String className, Symbol.ClassSymbol targetClass, String staticMethod, String[] params) {
-        List<JCTree.JCExpression> paramType;
+        List<JCTree.JCExpression> paramList;
         if (params.length == 0) {
-            paramType = TreeUtil.emptyExpression();
+            paramList = TreeUtil.emptyExpression();
         } else {
-            paramType = getParamType(targetClass, false, params);
-            if (null == paramType) {
+            paramList = getStaticParam(targetClass, params);
+            if (null == paramList) {
                 // 无匹配的静态方法
                 throw new RuntimeException("[Return Error] Can't find match param static method from " + className + " by " + Arrays.toString(params));
             }
         }
 
         JCTree.JCExpression clazzType = syntaxTreeMaker.findClass(className);
-        JCTree.JCMethodInvocation method = syntaxTreeMaker.getMethod(clazzType, staticMethod, paramType);
+        JCTree.JCMethodInvocation method = syntaxTreeMaker.getMethod(clazzType, staticMethod, paramList);
         return syntaxTreeMaker.getTreeMaker().Return(method);
     }
 
     /**
      * 参数转换
      * @param classSymbol 解析类节点
-     * @param isConstruct 解析构造方法还是静态方法
      * @param values 参数数据
      * @return 返回对应参数元素
      */
-    private List<JCTree.JCExpression> getParamType(Symbol.ClassSymbol classSymbol, boolean isConstruct, String[] values) {
-        int length = values.length;
-
-        List<JCTree.JCExpression> param = null;
-
-        boolean findParam;
+    private List<JCTree.JCExpression> getConstParam(Symbol.ClassSymbol classSymbol, String[] values) {
         for (Symbol element : classSymbol.getEnclosedElements()) {
-
             // 构造方法
-            if (isConstruct) {
-                if (!element.isConstructor()) {
-                    continue;
-                }
-            } else {
-                // 静态方法
-                if (element.getKind() != ElementKind.METHOD) {
-                    continue;
-                }
-                if (!element.isStatic()) {
-                    continue;
-                }
+            if (!element.isConstructor()) {
+                continue;
             }
 
             Symbol.MethodSymbol methodSymbol = (Symbol.MethodSymbol) element;
@@ -108,44 +103,78 @@ public class ReturnBuild {
                 continue;
             }
 
-            findParam = true;
-            for (int i = 0; findParam && i < length; i++) {
-                Symbol.VarSymbol varSymbol = parameters.get(i);
-                String value = values[i];
-
-                String typeName = TreeUtil.getOriginalTypeName(varSymbol);
-                TypeTag baseType = TypeUtil.getBaseType(typeName);
-
-                JCTree.JCExpression argsVal;
-
-                // 不支持复杂对象
-                if (null == baseType) {
-                    param = null;
-                    findParam = false;
-                    continue;
-                }
-
-                Object data = TreeUtil.getValue(baseType, value);
-                // 数据与类型不匹配
-                if (null == data) {
-                    param = null;
-                    findParam = false;
-                    continue;
-                }
-                argsVal = syntaxTreeMaker.newElement(baseType, data);
-
-                if (null == param) {
-                    param = List.of(argsVal);
-                } else {
-                    param = param.append(argsVal);
-                }
+            if (values.length == 0) {
+                return List.<JCTree.JCExpression>nil();
             }
 
+            List<JCTree.JCExpression> param = getParam(parameters, values);
             if (param != null) {
                 return param;
             }
         }
+        return null;
+    }
 
+
+    /**
+     * 参数转换
+     * @param classSymbol 解析类节点
+     * @param values 参数数据
+     * @return 返回对应参数元素
+     */
+    private List<JCTree.JCExpression> getStaticParam(Symbol.ClassSymbol classSymbol, String[] values) {
+        for (Symbol element : classSymbol.getEnclosedElements()) {
+            // 静态方法
+            if (element.getKind() != ElementKind.METHOD || !element.isStatic()) {
+                continue;
+            }
+
+            Symbol.MethodSymbol methodSymbol = (Symbol.MethodSymbol) element;
+            List<Symbol.VarSymbol> parameters = methodSymbol.getParameters();
+
+            // 参数个数一致
+            if (parameters.size() != values.length) {
+                continue;
+            }
+            if (values.length == 0) {
+                return List.<JCTree.JCExpression>nil();
+            }
+
+            List<JCTree.JCExpression> param = getParam(parameters, values);
+            if (param != null) {
+                return param;
+            }
+        }
+        return null;
+    }
+
+    private List<JCTree.JCExpression> getParam(List<Symbol.VarSymbol> parameters, String[] values) {
+        List<JCTree.JCExpression> param = null;
+        for (int i = 0; i < parameters.size(); i++) {
+            Symbol.VarSymbol varSymbol = parameters.get(i);
+            String value = values[i];
+
+            String typeName = TreeUtil.getOriginalTypeName(varSymbol);
+            TypeTag baseType = TypeUtil.getBaseType(typeName);
+
+            // 不支持复杂对象
+            if (null == baseType) {
+                return null;
+            }
+
+            Object data = TreeUtil.getValue(baseType, value);
+            // 数据与类型不匹配
+            if (null == data) {
+                return null;
+            }
+
+            JCTree.JCExpression argsVal = syntaxTreeMaker.newElement(baseType, data);
+            if (null == param) {
+                param = List.of(argsVal);
+            } else {
+                param = param.append(argsVal);
+            }
+        }
         return null;
     }
 }

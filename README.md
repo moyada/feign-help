@@ -85,6 +85,29 @@ public interface UserRemote extends UserApi {
 ```
 
 #### 指定方法返回值
+
+可自定义构造 Fallback 中方法的返回值，支持基本类型、构造方法、静态方法，参数将会自动匹配出合适的方法。
+
+1. 基本类型
+```
+@FeignReturn(target = boolean.class, params = ["ture"])
+@FallbackFactoryBuild
+@FeignClient(name = "user")
+public interface UserRemote extends UserApi {
+}
+
+...
+
+public interface UserRemote extends UserApi {
+
+    public Boolean deleteUser(@RequestBody UserRequest data) {
+         return true
+    }
+}
+
+```
+
+2. 构造函数
 ```
 @FeignReturn(target = Result.class, staticMethod = "error", params = ["500", "msg"])
 @FallbackFactoryBuild
@@ -94,6 +117,25 @@ public interface UserRemote extends UserApi {
 
 ...
 
+public interface UserRemote extends UserApi {
+
+    public Result<Boolean> deleteUser(@RequestBody UserRequest data) {
+         return new Result.error();
+    }
+}
+
+```
+
+3. 静态方法
+
+```
+@FeignReturn(target = Result.class, staticMethod = "error", params = ["500", "msg"])
+@FallbackFactoryBuild
+@FeignClient(name = "user")
+public interface UserRemote extends UserApi {
+}
+
+...
 
 public interface UserRemote extends UserApi {
 

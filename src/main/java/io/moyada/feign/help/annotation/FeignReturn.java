@@ -30,5 +30,5 @@ public @interface FeignReturn {
      * 默认返回空构造方法对象
      * @return 返回值的构造数据
      */
-    String[] params();
+    String[] params() default {};
 }
