@@ -179,12 +179,12 @@ public class FallbackFactoryTranslator extends BaseTranslator {
      */
     private JCTree.JCFieldAccess newSymbol(JCTree.JCClassDecl interClass) {
         // FallbackFactory 类符号
-        Symbol.ClassSymbol factorySymbol = syntaxTreeMaker.newClassSymbol(interClass.sym, "FallbackFactory");
+        Symbol.ClassSymbol factorySymbol = syntaxTreeMaker.newClassSymbol(interClass.sym, ClassName.FACTORY_NAME);
         // FallbackFactory.class 类符号
         Symbol.ClassSymbol factoryClassSymbol = syntaxTreeMaker.newClassSymbol(factorySymbol, "class");
 
         // FallbackFactory 引用
-        JCTree.JCFieldAccess classIdent = treeMaker.Select(treeMaker.Ident(interClass.name), syntaxTreeMaker.getName("FallbackFactory"));
+        JCTree.JCFieldAccess classIdent = treeMaker.Select(treeMaker.Ident(interClass.name), syntaxTreeMaker.getName(ClassName.FACTORY_NAME));
         Type.ErrorType ftype = new Type.ErrorType(factorySymbol, syntaxTreeMaker.symtab.errType);
         classIdent.setType(ftype);
         classIdent.sym = factorySymbol;

@@ -98,13 +98,27 @@ public interface UserRemote extends UserApi {
 
 ...
 
+@FeignClient(name = "user", fallbackFactory = UserRemote.FallbackFactory.class)
 public interface UserRemote extends UserApi {
+    @Component
+    public static class FallbackFactory implements feign.hystrix.FallbackFactory {
+        public FallbackFactory() {
+        }
 
-    public Boolean deleteUser(@RequestBody UserRequest data) {
-         return true
+        public UserRemote create(Throwable arg0) {
+            return new UserRemote.Fallback();
+        }
+    }
+
+    public static class Fallback implements UserRemote {
+        public Fallback() {
+        }
+
+        public Boolean deleteUser(@RequestBody UserRequest data) {
+             return true
+        }
     }
 }
-
 ```
 
 2. 构造函数
@@ -117,13 +131,27 @@ public interface UserRemote extends UserApi {
 
 ...
 
+@FeignClient(name = "user", fallbackFactory = UserRemote.FallbackFactory.class)
 public interface UserRemote extends UserApi {
+    @Component
+    public static class FallbackFactory implements feign.hystrix.FallbackFactory {
+        public FallbackFactory() {
+        }
 
-    public Result<Boolean> deleteUser(@RequestBody UserRequest data) {
-         return new Result.error();
+        public UserRemote create(Throwable arg0) {
+            return new UserRemote.Fallback();
+        }
+    }
+
+    public static class Fallback implements UserRemote {
+        public Fallback() {
+        }
+
+        public Result<Boolean> deleteUser(@RequestBody UserRequest data) {
+         return new Result();
+        }
     }
 }
-
 ```
 
 3. 静态方法
@@ -137,13 +165,27 @@ public interface UserRemote extends UserApi {
 
 ...
 
+@FeignClient(name = "user", fallbackFactory = UserRemote.FallbackFactory.class)
 public interface UserRemote extends UserApi {
+    @Component
+    public static class FallbackFactory implements feign.hystrix.FallbackFactory {
+        public FallbackFactory() {
+        }
 
-    public Result<Boolean> deleteUser(@RequestBody UserRequest data) {
-         return Result.error(500, "msg");
+        public UserRemote create(Throwable arg0) {
+            return new UserRemote.Fallback();
+        }
+    }
+
+    public static class Fallback implements UserRemote {
+        public Fallback() {
+        }
+
+        public Result<Boolean> deleteUser(@RequestBody UserRequest data) {
+            return Result.error(500, "msg");
+        }
     }
 }
-
 ```
 
 ## Contributors

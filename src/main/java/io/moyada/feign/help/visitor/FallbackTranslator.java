@@ -132,7 +132,7 @@ public class FallbackTranslator extends BaseTranslator {
     }
 
     /**
-     * 实现空方法
+     * 实现方法
      * @param jcMethodDecl 方法
      * @return 方法元素
      */
