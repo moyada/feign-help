@@ -138,8 +138,21 @@ public class FallbackTranslator extends BaseTranslator {
      */
     private JCTree.JCMethodDecl createJCMethod(JCTree.JCMethodDecl jcMethodDecl, JCTree.JCReturn buildReturn) {
         JCTree.JCModifiers mod = treeMaker.Modifiers(Flags.PUBLIC);
+
+        List<JCTree.JCVariableDecl> params = null;
         for (JCTree.JCVariableDecl param : jcMethodDecl.params) {
-            param.mods.annotations = List.nil();
+            JCTree.JCModifiers mods = treeMaker.Modifiers(param.mods.flags);
+            JCTree.JCVariableDecl varDef = treeMaker.VarDef(mods, param.name, param.vartype, param.init);
+//            varDef.sym = param.sym;
+            if (params == null) {
+                params = List.of(varDef);
+            } else {
+                params = params.append(varDef);
+            }
+        }
+
+        if (params == null) {
+            params = List.nil();
         }
 
         JCTree.JCBlock body = getBody(jcMethodDecl.restype, buildReturn);
@@ -147,7 +160,7 @@ public class FallbackTranslator extends BaseTranslator {
                 jcMethodDecl.name,
                 jcMethodDecl.restype,
                 jcMethodDecl.typarams,
-                jcMethodDecl.params,
+                params,
                 jcMethodDecl.thrown,
                 body, null);
     }
