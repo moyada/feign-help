@@ -122,7 +122,7 @@
         <dependency>
             <groupId>so.dian.video</groupId>
             <artifactId>fuxi</artifactId>
-            <version>1.0.2-SNAPSHOT</version>
+            <version>1.0.1-SNAPSHOT</version>
             <optional>true</optional>
         </dependency>
 
