@@ -16,6 +16,7 @@ import io.moyada.feign.help.util.ClassUtil;
 import io.moyada.feign.help.util.ElementUtil;
 import io.moyada.feign.help.util.TreeUtil;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -132,66 +133,45 @@ public class FallbackTranslator extends BaseTranslator {
      */
     private JCTree.JCMethodDecl createJCMethod(JCTree.JCMethodDecl jcMethodDecl) {
         JCTree.JCModifiers mod = treeMaker.Modifiers(Flags.PUBLIC);
+
+        List<JCTree.JCVariableDecl> params = null;
         for (JCTree.JCVariableDecl param : jcMethodDecl.params) {
-            param.mods.annotations = List.nil();
+            JCTree.JCModifiers mods = treeMaker.Modifiers(param.mods.flags);
+            JCTree.JCVariableDecl varDef = treeMaker.VarDef(mods, param.name, param.vartype, param.init);
+//            varDef.sym = param.sym;
+            if (params == null) {
+                params = List.of(varDef);
+            } else {
+                params = params.append(varDef);
+            }
         }
+
+        if (params == null) {
+            params = List.nil();
+        }
+
         return treeMaker.MethodDef(mod,
                 jcMethodDecl.name,
                 jcMethodDecl.restype,
                 jcMethodDecl.typarams,
-                jcMethodDecl.params,
+                params,
                 jcMethodDecl.thrown,
                 emptyBody(jcMethodDecl.restype), null);
     }
 
     private JCTree.JCBlock emptyBody(JCTree.JCExpression restype) {
-        JCTree.JCLiteral res;
-
-        if (restype instanceof JCTree.JCPrimitiveTypeTree) {
-            TypeTag baseType = ClassUtil.getBaseType(restype.toString());
-            if (baseType == null) {
-                printer.warning("cannot recognized type: " + restype);
-                return syntaxTreeMaker.getBlock(TreeUtil.newStatement());
-            }
-
-            switch (baseType) {
-                case SHORT:
-                case INT:
-                    res = syntaxTreeMaker.zeroIntNode;
-                    break;
-                case FLOAT:
-                    res = syntaxTreeMaker.zeroFloatNode;
-                    break;
-                case DOUBLE:
-                    res = syntaxTreeMaker.zeroDoubleNode;
-                    break;
-                case LONG:
-                    res = syntaxTreeMaker.zeroLongNode;
-                    break;
-                case BOOLEAN:
-                    res = syntaxTreeMaker.falseNode;
-                    break;
-                case CHAR:
-                    res = syntaxTreeMaker.emptyCh;
-                    break;
-                default:
-                    return syntaxTreeMaker.getBlock(TreeUtil.newStatement());
-            }
-        } else {
-            res = syntaxTreeMaker.nullNode;
-        }
-
         ListBuffer<JCTree.JCStatement> statements = TreeUtil.newStatement();
-        JCTree.JCReturn returnStatement = treeMaker.Return(res);
+        JCTree.JCReturn returnStatement = staticMethod();
         statements.add(returnStatement);
         return syntaxTreeMaker.getBlock(statements);
     }
 
     private JCTree.JCReturn staticMethod() {
-        JCTree.JCExpression fal = syntaxTreeMaker.newElement(TypeTag.BOOLEAN, 0);
-        List<JCTree.JCExpression> paramType = List.of(fal);
-        JCTree.JCExpression clazzType = syntaxTreeMaker.findClass("so.dian.video.BizResult");
-        JCTree.JCExpression method = syntaxTreeMaker.getMethod(clazzType, "of", paramType);
+        JCTree.JCExpression code = syntaxTreeMaker.newElement(TypeTag.INT, -1);
+        JCTree.JCExpression msg = syntaxTreeMaker.newElement(TypeTag.CLASS, "Remote invoke error");
+        List<JCTree.JCExpression> paramType = List.of(code, msg);
+        JCTree.JCExpression clazzType = syntaxTreeMaker.findClass("so.dian.fuxi.result.BizResult");
+        JCTree.JCExpression method = syntaxTreeMaker.getMethod(clazzType, "error", paramType);
         return treeMaker.Return(method);
     }
 }

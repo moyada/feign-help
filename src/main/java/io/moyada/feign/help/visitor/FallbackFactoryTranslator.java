@@ -13,6 +13,7 @@ import io.moyada.feign.help.constant.ClassName;
 import io.moyada.feign.help.support.Printer;
 import io.moyada.feign.help.support.SyntaxTreeMaker;
 import io.moyada.feign.help.util.TreeUtil;
+import org.springframework.validation.annotation.Validated;
 
 import javax.lang.model.element.ElementKind;
 
@@ -184,7 +185,7 @@ public class FallbackFactoryTranslator extends BaseTranslator {
         Type.ErrorType ftype = new Type.ErrorType(factorySymbol, ut);
         Type.ErrorType errType = new Type.ErrorType(ftype, factoryClassSymbol);
 
-        JCTree.JCFieldAccess classIdent = treeMaker.Select(treeMaker.Ident(syntaxTreeMaker.getName("UserRemote")), syntaxTreeMaker.getName("FallbackFactory"));
+        JCTree.JCFieldAccess classIdent = treeMaker.Select(treeMaker.Ident(interClass.name), syntaxTreeMaker.getName("FallbackFactory"));
         classIdent.setType(ftype);
         classIdent.sym = factorySymbol;
 
